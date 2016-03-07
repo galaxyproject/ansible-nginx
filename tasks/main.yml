@@ -3,7 +3,11 @@
 
 # Install from apt
 - include: apt.yml
-  when: nginx_flavor in [ 'core', 'light', 'full', 'extras' ]
+  when: nginx_flavor in [ 'core', 'light', 'full', 'extras' ] and ansible_os_family == "Debian"
+
+# Install from EPEL
+- include: epel.yml
+  when: ansible_os_family == "RedHat"
 
 - name: Install vhost configs
   template: src=templates/nginx/{{ item }}.j2 dest={{ nginx_local_conf_dir }}/sites-available/{{ item }} mode=0444 backup=yes
@@ -32,8 +36,10 @@
 - name: Create SSL directories
   file: path={{ item | dirname }} state=directory mode=0755
   with_items:
-    - "{{ nginx_conf_ssl_certificate }}"
-    - "{{ nginx_conf_ssl_certificate_key }}"
+    # it shouldn't be necessary to default these but Ansible templates these
+    # before checking the conditional below
+    - "{{ nginx_conf_ssl_certificate | default('') }}"
+    - "{{ nginx_conf_ssl_certificate_key | default('') }}"
   when: nginx_conf_ssl_certificate is defined and nginx_conf_ssl_certificate_key is defined
 
 - name: Install SSL certificate
