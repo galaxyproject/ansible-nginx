@@ -24,6 +24,7 @@
   with_items: nginx_configs
   notify:
     - reload nginx
+    - supervisorctl reload nginx
 
 - name: Enable vhosts
   file:
@@ -33,6 +34,7 @@
   with_items: nginx_configs
   notify:
     - reload nginx
+    - supervisorctl reload nginx
 
 - name: Set additional config options
   template:
@@ -43,6 +45,16 @@
   when: nginx_conf_http is defined
   notify:
     - restart nginx
+    - supervisorctl restart nginx
+
+- name: Copy additional configs
+  template:
+    src: "templates/nginx/{{ item }}.j2"
+    dest: "{{ nginx_conf_dir }}/{{ item }}"
+    mode: 0444
+    backup: yes
+  with_items: "{{ nginx_extra_configs | default([]) }}"
+  when: nginx_extra_configs is defined
 
 - name: Configure server-wide SSL
   template:
@@ -53,6 +65,7 @@
   when: nginx_conf_ssl_certificate is defined and nginx_conf_ssl_certificate_key is defined
   notify:
     - restart nginx
+    - supervisorctl restart nginx
 
 - name: Create SSL directories
   file:
