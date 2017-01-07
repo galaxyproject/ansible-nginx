@@ -30,5 +30,5 @@ http {
 
     #gzip  on;
 
-    include /etc/opt/local/nginx/conf.d/*.conf;
+    include {{ nginx_conf_dir }}/conf.d/*.conf;
 }
