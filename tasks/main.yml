@@ -32,27 +32,6 @@
     - update supervisord
   when: nginx_supervisor and supervisord_conf_dir is defined
 
-- name: Install vhost configs
-  template:
-    src: templates/nginx/{{ item }}.j2
-    dest: "{{ nginx_conf_dir }}/sites-available/{{ item }}"
-    mode: 0444
-    backup: yes
-  with_items: "{{ nginx_configs }}"
-  notify:
-    - reload nginx
-    - supervisorctl reload nginx
-
-- name: Enable vhosts
-  file:
-    src: "{{ nginx_conf_dir }}/sites-available/{{ item }}"
-    dest: "{{ nginx_conf_dir }}/sites-enabled/{{ item }}"
-    state: link
-  with_items: "{{ nginx_configs }}"
-  notify:
-    - reload nginx
-    - supervisorctl reload nginx
-
 - name: Set additional config options
   template:
     src: http_options.conf.j2
@@ -73,9 +52,19 @@
   with_items: "{{ nginx_extra_configs | default([]) }}"
   when: nginx_extra_configs is defined
 
-- name: Include SSL Tasks
-  include: ssl.yml
-  when: nginx_conf_ssl_certificate is defined and nginx_conf_ssl_certificate_key is defined
+- name: Include server (vhost) tasks
+  import_tasks: server.yml
+
+- name: Include SSL configuration tasks
+  include_tasks: ssl-{{ __nginx_sslmode }}.yml
+  when: __nginx_ssl
+
+- name: Include SSL server (vhost) tasks
+  #import_tasks: server.yml
+  include_tasks: server.yml
+  vars:
+    nginx_servers: "{{ nginx_ssl_servers | default([]) }}"
+  when: nginx_ssl_servers is defined
 
 - name: Enable nginx (supervisor)
   supervisorctl:

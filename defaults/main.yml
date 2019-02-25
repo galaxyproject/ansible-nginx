@@ -4,6 +4,7 @@
 # Where should the role find ssl certificates to copy to the remote host (relative from where ansible-playbook is called
 # if not absolute)
 nginx_ssl_src_dir: files/ssl
+nginx_server_src_dir: templates/nginx
 
 # "flavor" of nginx to install
 nginx_flavor: full
@@ -41,5 +42,9 @@ nginx_supervisor_service_name: nginx
 # enable ipv6 for the default vhost?
 nginx_enable_default_ipv6: true
 
-# additional nginx config files to install
-nginx_configs: [ ]
+# server block template files to install
+nginx_servers: "{{ nginx_configs | default([]) }}"
+#nginx_ssl_servers: []
+
+__nginx_ssl: "{{ nginx_conf_ssl_certificate is defined and nginx_conf_ssl_certificate_key is defined }}"
+__nginx_sslmode: "{{ 'external' if nginx_ssl_role is defined else 'internal' }}"

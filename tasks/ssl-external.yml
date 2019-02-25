@@ -1,0 +1,11 @@
+---
+
+- name: Flush handlers before running SSL role
+  meta: flush_handlers
+
+- name: Include SSL role
+  include_role:
+    name: "{{ nginx_ssl_role }}"
+
+- name: Include common SSL tasks
+  import_tasks: ssl-common.yml

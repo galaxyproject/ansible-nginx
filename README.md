@@ -20,14 +20,17 @@ supported.
 Role Variables
 --------------
 
-### Optional variables ###
+All variables are optional.
+
+### General Configuration
 
 - `nginx_flavor` (default: `full`): nginx package to install (for choices, see the `nginx` metapackage providers for
   your Debian-based distribution). On RedHat-based distributions, this can either be `galaxy` (for "Galaxy nginx", which
   includes the nginx upload and pam modules), or any other value for EPEL nginx. This value is not used on pkgin/SmartOS
   installations.
-- `nginx_configs`: A list of virtualhost templates (relative to `templates/nginx/`).
-- `nginx_conf_http`: Set arbitrary options in the `http{}` section of `nginx.conf`. This is a hash (dictionary) where
+- `nginx_servers`: A list of `server {}` (virtualhost) templates (relative to `templates/nginx/`).
+- `nginx_ssl_servers`: Like `nginx_servers`, but only installed if SSL is configured.
+- `nginx_conf_http`: Set arbitrary options in the `http {}` section of `nginx.conf`. This is a hash (dictionary) where
   keys are nginx config options and values are the option's value.
 - `nginx_default_redirect_uri`: When using nginx from EPEL, a default virtualhost is enabled. This option controls what
   URI the default virtualhost should be redirected to. nginx variables are supported.
@@ -35,22 +38,43 @@ Role Variables
 - `nginx_supervisor`: Run nginx under supervisor (requires setting certain supervisor variables).
 - `nginx_conf_dir` (default: `/etc/nginx`): nginx configuration directory
 
-These variables control the use of SSL. If unset, SSL will not be enabled. See Example Playbook for usage.
+#### SSL Configuration
+
+The `nginx_conf_ssl_certificate*` variables control the use of SSL. If unset, SSL will not be enabled. See Example
+Playbook for usage.
+
+- `nginx_conf_ssl_certificate`: File name of the SSL certificate on the remote host.
+- `nginx_conf_ssl_certificate_key`: File name of the SSL private key on the remote host.
+- `nginx_conf_ssl_ciphers`: The `ssl_ciphers` option in `nginx.conf`, this is a *list*.
+- `nginx_conf_ssl_protocols`: The `ssl_protocols` option in `nginx.conf`, this is a *list*.
+
+#### External SSL Configuration
+
+- `nginx_ssl_role` (default: undefined): Role to run to set up SSL. This allows the use of (for example)
+  [usegalaxy-eu.certbot][usegalaxy-eu-certbot], which typically must run after nginx is set up and running on port 80,
+  but before nginx attempts to use SSL (since until certbot runs, the certs that nginx expects do not exist yet).
+  Setting this will cause the SSL role to be run at the appropriate point in this role. See also `nginx_ssl_servers`.
+- `nginx_conf_ssl_certificate`: File name of the SSL certificate.
+- `nginx_conf_ssl_certificate_key`: File name of the SSL private key.
+
+In this mode, the `nginx_conf_ssl_certificate*` variables should be absolute paths.
+
+[usegalaxy-eu-certbot]: https://github.com/usegalaxy-eu/ansible-certbot/
+
+#### Playbook SSL Configuration
+
+If `nginx_ssl_role` is unset, you can use this role to copy your certificate and key from the playbook.
 
 - `nginx_ssl_conf_dir` (default: `<nginx_conf_dir>/ssl`): Where to copy SSL certificates and other SSL-related files to.
 - `nginx_ssl_src_dir` (default: `files/ssl`): Where to copy SSL certificates from.
-- `nginx_conf_ssl_certificate`: File name of the SSL certificate.
-- `nginx_conf_ssl_certificate_key`: File name of the SSL private key.
 - `sslkeys`: A hash (dictionary) containing private keys. Keys are the filenames (without leading path elements) matching
   `nginx_conf_ssl_certificate_key`.
-- `nginx_conf_ssl_ciphers`: The `ssl_ciphers` option in `nginx.conf`, this is a *list*.
-- `nginx_conf_ssl_protocols`: The `ssl_protocols` option in `nginx.conf`, this is a *list*.
 - `nginx_conf_ssl_trusted_certificate`: File name of trusted certificates for OCSP stapling (setting enables stapling).
 
-For legacy reasons, `nginx_conf_ssl_certificate*` can be absolute paths to the files on the remote host. If this is the
-case, the certs are searched for in `nginx_ssl_src_dir` with the directory portion of the path stripped. If the path is
-not absolute, it is relative to `nginx_ssl_src_dir` for the source, and relative to `nginx_ssl_conf_dir` for the
-destination.
+In this mode, the `nginx_conf_ssl_certificate*` variables should be relative paths. However, for legacy reasons, they
+can be absolute paths to the files on the remote host. If this is the case, the certs are searched for in
+`nginx_ssl_src_dir` with the directory portion of the path stripped. If the path is not absolute, it is relative to
+`nginx_ssl_src_dir` for the source, and relative to `nginx_ssl_conf_dir` for the destination.
 
 Dependencies
 ------------
