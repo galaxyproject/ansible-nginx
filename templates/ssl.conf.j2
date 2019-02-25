@@ -5,11 +5,11 @@
 # Allowable SSL protocols
 {% if nginx_conf_ssl_protocols is defined %}
 ssl_protocols {{ nginx_conf_ssl_protocols | join(' ') }};
-{% elif nginx_version | version_compare('1.13.0', '>=') and nginx_openssl_version | version_compare('1.1.1', '>=') %}
+{% elif nginx_version is version_compare('1.13.0', '>=') and nginx_openssl_version is version_compare('1.1.1', '>=') %}
 ssl_protocols TLSv1.2 TLSv1.3;
-{% elif nginx_version | version_compare('1.1.13', '>=') and nginx_openssl_version | version_compare('1.0.1', '>=') %}
+{% elif nginx_version is version_compare('1.1.13', '>=') and nginx_openssl_version is version_compare('1.0.1', '>=') %}
 ssl_protocols TLSv1.2;
-{% elif nginx_version | version_compare('1.0.12', '>=') and nginx_openssl_version | version_compare('1.0.1', '>=') %}
+{% elif nginx_version is version_compare('1.0.12', '>=') and nginx_openssl_version is version_compare('1.0.1', '>=') %}
 ssl_protocols TLSv1.1;
 {% else %}
 ssl_protocols TLSv1;
