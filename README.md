@@ -28,7 +28,8 @@ All variables are optional.
   your Debian-based distribution). On RedHat-based distributions, this can either be `galaxy` (for "Galaxy nginx", which
   includes the nginx upload and pam modules), or any other value for EPEL nginx. This value is not used on pkgin/SmartOS
   installations.
-- `nginx_servers`: A list of `server {}` (virtualhost) templates (relative to `templates/nginx/`).
+- `nginx_servers`: A list of `server {}` (virtualhost) templates (relative to `templates/nginx/`, file ending `.j2` is
+  automatically added to list entries when searching).
 - `nginx_ssl_servers`: Like `nginx_servers`, but only installed if SSL is configured.
 - `nginx_conf_http`: Set arbitrary options in the `http {}` section of `nginx.conf`. This is a hash (dictionary) where
   keys are nginx config options and values are the option's value.
@@ -86,28 +87,66 @@ Although not a requirement, [geerlingguy.repo-epel][repo-epel] can be used to en
 Example Playbook
 ----------------
 
-Install nginx with SSL:
+Install nginx with SSL certs stored in the playbook (cert at `{{ playbook_dir }}/files/ssl/snakeoil_cert.pem`):
 
 ```yaml
 - name: Install and configure nginx
   hosts: webservers
-  remote_user: root
   vars:
     sslkeys:
-      'snakeoil_privatekey.pem': |
+      snakeoil_privatekey.pem: |
         -----BEGIN PRIVATE KEY-----
         MIIE...
         -----END PRIVATE KEY-----
     nginx_conf_ssl_certificate: snakeoil_cert.pem
     nginx_conf_ssl_certificate_key: snakeoil_privatekey.pem
-    nginx_ssl_src_dir: files/ssl
-    nginx_configs:
+    nginx_servers:
       - vhost1
       - vhost2
     nginx_conf_http:
       client_max_body_size: 1g
   roles:
     - galaxyproject.nginx
+```
+
+Install nginx with SSL certs obtained from Let's Encrypt with Certbot using [usegalaxy-eu.certbot][usegalaxy-eu-certbot]:
+
+```yaml
+- name: Install and configure nginx
+  hosts: webservers
+  vars:
+    nginx_conf_ssl_certificate: /etc/ssl/certs/fullchain.pem
+    nginx_conf_ssl_certificate_key: /etc/ssl/private/private.pem
+    nginx_servers:
+      - vhost1
+      - vhost2
+    nginx_ssl_servers:
+      - vhost1_ssl
+      - vhost2_ssl
+    nginx_conf_http:
+      client_max_body_size: 1g
+    nginx_ssl_role: usegalaxy-eu.certbot
+    certbot_auth_method: --webroot
+    certbot_domains:
+      - vhost1.example.org
+      - vhost2.example.org
+    certbot_admin_email: webmaster@example.org
+    certbot_agree_tos: --agree-tos
+    certbot_well_known_root: /var/www/_well-known_root
+    certbot_post_renewal: |
+      systemctl restart nginx || true
+  roles:
+    - galaxyproject.nginx
+```
+
+In `templates/nginx/vhost1.j2` and `templates/nginx/vhost2.j2`, be sure to add something like:
+
+```nginx
+server {
+    location /.well-known/ {
+        root {{ certbot_well_known_root }};
+    }
+}
 ```
 
 License
