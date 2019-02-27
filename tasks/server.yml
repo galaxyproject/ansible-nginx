@@ -1,0 +1,22 @@
+---
+
+- name: Install vhost configs
+  template:
+    src: "{{ nginx_server_src_dir }}/{{ item }}.j2"
+    dest: "{{ nginx_conf_dir }}/sites-available/{{ item | basename }}"
+    mode: 0444
+    backup: yes
+  with_items: "{{ nginx_servers }}"
+  notify:
+    - reload nginx
+    - supervisorctl reload nginx
+
+- name: Enable vhosts
+  file:
+    src: "{{ nginx_conf_dir }}/sites-available/{{ item | basename }}"
+    dest: "{{ nginx_conf_dir }}/sites-enabled/{{ item | basename }}"
+    state: link
+  with_items: "{{ nginx_servers }}"
+  notify:
+    - reload nginx
+    - supervisorctl reload nginx
