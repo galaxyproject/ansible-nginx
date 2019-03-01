@@ -10,3 +10,10 @@
 - name: Apply new SELinux file context to filesystem
   command: "restorecon -irv {{ certbot_well_known_root }}"
   when: update_fcontexts.changed
+
+- name: "Allow connecting to localhost"
+  seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes
+  when: nginx_selinux_allow_local_connections
