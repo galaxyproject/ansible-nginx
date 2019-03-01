@@ -77,6 +77,13 @@ can be absolute paths to the files on the remote host. If this is the case, the 
 `nginx_ssl_src_dir` with the directory portion of the path stripped. If the path is not absolute, it is relative to
 `nginx_ssl_src_dir` for the source, and relative to `nginx_ssl_conf_dir` for the destination.
 
+#### SELinux
+
+If SELinux is in enforcing mode, several additional actions will be taken:
+
+- If `certbot_well_known_root` is set, it will be updated to allow the type `httpd_sys_content_t` permissions on all subdirectories
+- `nginx_selinux_allow_local_connections` (default: `false`): Allow nginx to connect to localhost
+
 Dependencies
 ------------
 
@@ -159,4 +166,4 @@ License
 Author Information
 ------------------
 
-[Nate Coraor](https://github.com/natefoo)  
+[Nate Coraor](https://github.com/natefoo)
