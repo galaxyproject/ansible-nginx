@@ -1,0 +1,12 @@
+---
+- name: "Allow nginx httpd_sys_content_t to access the well-known root"
+  sefcontext:
+    target: '{{ certbot_well_known_root }}(/.*)?'
+    setype: httpd_sys_content_t
+    state: present
+  register: update_fcontexts
+  when: certbot_well_known_root is defined
+
+- name: Apply new SELinux file context to filesystem
+  command: "restorecon -irv {{ certbot_well_known_root }}"
+  when: update_fcontexts.changed
