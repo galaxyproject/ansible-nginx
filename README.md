@@ -166,4 +166,5 @@ License
 Author Information
 ------------------
 
-[Nate Coraor](https://github.com/natefoo)
+- [Nate Coraor](https://github.com/natefoo)
+- [Helena Rasche](https://github.com/erasche)
