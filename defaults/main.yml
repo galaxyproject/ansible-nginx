@@ -48,3 +48,5 @@ nginx_servers: "{{ nginx_configs | default([]) }}"
 
 __nginx_ssl: "{{ nginx_conf_ssl_certificate is defined and nginx_conf_ssl_certificate_key is defined }}"
 __nginx_sslmode: "{{ 'external' if nginx_ssl_role is defined else 'internal' }}"
+
+nginx_selinux_allow_local_connections: false

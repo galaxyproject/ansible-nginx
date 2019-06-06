@@ -1,13 +1,13 @@
 ---
 # main tasks file for galaxyproject.nginx
 
-- include: apt.yml
+- include_tasks: apt.yml
   when: ansible_os_family == "Debian"
 
-- include: yum.yml
+- include_tasks: yum.yml
   when: ansible_os_family == "RedHat"
 
-- include: pkgin.yml
+- include_tasks: pkgin.yml
   when: ansible_pkg_mgr == "pkgin"
 
 - name: Collect nginx -V output
@@ -23,6 +23,9 @@
   set_fact:
     nginx_version: "{{ nginx_v | regex_replace('.*nginx version: nginx/([\\d.]+).*', '\\1') }}"
     nginx_openssl_version: "{{ nginx_v | regex_replace('.*built with OpenSSL ([\\d.]+[a-z]*).*', '\\1') }}"
+
+- include_tasks: selinux.yml
+  when: ansible_selinux.mode == "enforcing"
 
 - name: Create supervisor config
   template:
