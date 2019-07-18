@@ -25,7 +25,7 @@
     nginx_openssl_version: "{{ nginx_v | regex_replace('.*built with OpenSSL ([\\d.]+[a-z]*).*', '\\1') }}"
 
 - include_tasks: selinux.yml
-  when: ansible_selinux.mode == "enforcing"
+  when: ansible_selinux.status == "enabled"
 
 - name: Create supervisor config
   template:
