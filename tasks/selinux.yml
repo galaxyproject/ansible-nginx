@@ -8,7 +8,7 @@
   when: certbot_well_known_root is defined
 
 - name: Apply new SELinux file context to filesystem
-  command: "restorecon -irv {{ certbot_well_known_root }}"
+  command: "restorecon -rv {{ certbot_well_known_root }}"
   when: update_fcontexts.changed
 
 - name: "Allow connecting to localhost"
