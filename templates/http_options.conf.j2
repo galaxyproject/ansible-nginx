@@ -4,7 +4,7 @@
 
 # included into http {}
 
-{% for opt in nginx_conf_http %}
+{% for opt in nginx_conf_http | sort %}
 {{ opt }} {{ nginx_conf_http[opt] }};
 {% endfor %}
 
