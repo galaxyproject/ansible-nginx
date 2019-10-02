@@ -18,6 +18,7 @@
 - name: Make nginx -V output a single line
   set_fact:
     nginx_v: "{{ nginx_v_out.stderr | regex_replace('\\n', ' ') }}"
+  when: not ansible_check_mode
 
 - name: Register nginx-reported facts
   set_fact:
