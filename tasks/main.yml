@@ -18,11 +18,29 @@
 - name: Make nginx -V output a single line
   set_fact:
     nginx_v: "{{ nginx_v_out.stderr | regex_replace('\\n', ' ') }}"
+  when: not ansible_check_mode
 
 - name: Register nginx-reported facts
   set_fact:
     nginx_version: "{{ nginx_v | regex_replace('.*nginx version: nginx/([\\d.]+).*', '\\1') }}"
     nginx_openssl_version: "{{ nginx_v | regex_replace('.*built with OpenSSL ([\\d.]+[a-z]*).*', '\\1') }}"
+  when: not ansible_check_mode
+
+- name: Register fake news nginx facts
+  set_fact:
+    nginx_version: "1.12.2"
+    nginx_openssl_version: "1.0.2k"
+  when: ansible_check_mode
+
+- name: Admit to fake news nginx facts
+  debug:
+    msg: >-
+      The nginx/openssl version cannot be detected in check mode. We have picked an arbitrary version and set that,
+      allowing check mode to function properly. This can and will produce unexpected and untrue diffs of predicted
+      changes, when your system nginx/openssl version differs from the arbitrary values we have chosen. You can find the
+      correct values by running nginx -V on your server, and can override these values with --extra-vars
+      'nginx_version=1.12.2 nginx_openssl_version=1.0.2k'
+  when: ansible_check_mode
 
 - include_tasks: selinux.yml
   when: ansible_selinux.status == "enabled"

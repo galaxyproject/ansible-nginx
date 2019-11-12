@@ -20,3 +20,5 @@
   notify:
     - reload nginx
     - supervisorctl reload nginx
+  # Ansible will exit due to src file missing.
+  when: not ansible_check_mode
