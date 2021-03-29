@@ -167,4 +167,4 @@ Author Information
 ------------------
 
 - [Nate Coraor](https://github.com/natefoo)
-- [Helena Rasche](https://github.com/erasche)
+- [Helena Rasche](https://github.com/hexylena)
