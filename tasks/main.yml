@@ -11,7 +11,7 @@
   when: ansible_pkg_mgr == "pkgin"
 
 - name: Collect nginx -V output
-  command: nginx -V
+  command: "{{ nginx_command }} -V"
   register: nginx_v_out
   changed_when: false
 
@@ -53,39 +53,83 @@
     - update supervisord
   when: nginx_supervisor and supervisord_conf_dir is defined
 
-- name: Set additional config options
-  template:
-    src: http_options.conf.j2
-    dest: "{{ nginx_conf_dir }}/conf.d/http_options.conf"
-    mode: 0444
-    backup: yes
-  when: nginx_conf_http is defined
-  notify:
-    - restart nginx
-    - supervisorctl restart nginx
+- name: Non-SSL configuration test block
+  block:
 
-- name: Copy additional configs
-  template:
-    src: "templates/nginx/{{ item }}.j2"
-    dest: "{{ nginx_conf_dir }}/{{ item }}"
-    mode: 0444
-    backup: yes
-  with_items: "{{ nginx_extra_configs | default([]) }}"
-  when: nginx_extra_configs is defined
+    - name: Set additional config options
+      template:
+        src: http_options.conf.j2
+        dest: "{{ nginx_conf_dir }}/conf.d/http_options.conf"
+        mode: 0444
+        backup: yes
+      when: nginx_conf_http is defined
+      register: __nginx_http_options_results
+      notify:
+        - restart nginx
+        - supervisorctl restart nginx
 
-- name: Include server (vhost) tasks
-  import_tasks: server.yml
+    - name: Copy additional configs
+      template:
+        src: "templates/nginx/{{ item }}.j2"
+        dest: "{{ nginx_conf_dir }}/{{ item }}"
+        mode: 0444
+        backup: yes
+      loop: "{{ nginx_extra_configs | default([]) }}"
+      register: __nginx_extra_configs_results
+      when: nginx_extra_configs is defined
 
-- name: Include SSL configuration tasks
-  include_tasks: ssl-{{ __nginx_sslmode }}.yml
-  when: __nginx_ssl
+    - name: Include server (vhost) tasks
+      import_tasks: server.yml
 
-- name: Include SSL server (vhost) tasks
-  #import_tasks: server.yml
-  include_tasks: server.yml
-  vars:
-    nginx_servers: "{{ nginx_ssl_servers | default([]) }}"
-  when: nginx_ssl_servers is defined
+    - name: Check non-SSL nginx config
+      command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
+      when: nginx_check_conf and not ansible_check_mode
+      changed_when: false
+
+  rescue:
+
+    - name: Include restore tasks
+      #import_tasks: restore.yml
+      include_tasks: restore.yml
+      when: nginx_check_conf and not ansible_check_mode
+
+    # If nginx_check_conf is enabled and we're not running in Ansible check mode, this won't be reached
+    - name: Fail due to previous configuration installation errors
+      fail:
+        msg: >-
+          Installing the nginx configuration failed, so the previous configuration has been restored. Please investigate
+          the errors above for more information.
+
+- name: SSL configuration test block
+  block:
+
+    - name: Include SSL configuration tasks
+      include_tasks: ssl-{{ __nginx_sslmode }}.yml
+      when: __nginx_ssl
+
+    - name: Include SSL server (vhost) tasks
+      #import_tasks: server.yml
+      #vars:
+      #  nginx_servers: "{{ nginx_ssl_servers | default([]) }}"
+      include_tasks: ssl-server.yml
+      when: nginx_ssl_servers is defined
+
+    - name: Check SSL nginx config
+      command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
+      when: nginx_check_conf and not ansible_check_mode
+      changed_when: false
+
+  rescue:
+
+    - name: Include restore tasks
+      include_tasks: restore.yml
+      when: nginx_check_conf and not ansible_check_mode
+
+    - name: Fail due to previous configuration installation errors
+      fail:
+        msg: >-
+          Installing the nginx SSL configuration failed, so the previous configuration has been restored. Please
+          investigate the errors above for more information.
 
 - name: Enable nginx (supervisor)
   supervisorctl:
