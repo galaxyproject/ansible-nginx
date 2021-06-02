@@ -19,6 +19,7 @@
     dest: "{{ nginx_conf_dir }}/conf.d/ssl.conf"
     mode: 0444
     backup: yes
+  register: __nginx_ssl_config_results
   notify:
     - restart nginx
     - supervisorctl restart nginx

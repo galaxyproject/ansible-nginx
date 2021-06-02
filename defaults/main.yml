@@ -14,6 +14,12 @@ nginx_conf_dir: /etc/nginx
 nginx_conf_file: "{{ nginx_conf_dir }}/nginx.conf"
 nginx_ssl_conf_dir: "{{ nginx_conf_dir }}/ssl"
 
+# Path to the nginx binary for version and config checking (default will use whatever is on $PATH)
+nginx_command: nginx
+
+# Validate config with `nginx -t`, attempt to restore previous config upon validation failure
+nginx_check_conf: true
+
 # SSL defaults (version dependent ones such as ssl_protocols can be found in the template)
 nginx_conf_ssl_ciphers:
   - ECDHE-ECDSA-AES128-GCM-SHA256

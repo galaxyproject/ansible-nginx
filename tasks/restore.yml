@@ -1,0 +1,122 @@
+---
+
+- name: Disable newly enabled SSL vhosts
+  file:
+    path: "{{ item.dest }}"
+    state: absent
+  loop: "{{ __nginx_ssl_server_link_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: __nginx_ssl_server_link_results is defined and item is changed
+
+- name: Restore SSL vhosts if previous versions exist
+  copy:
+    src: "{{ item.backup_file }}"
+    dest: "{{ item.dest }}"
+    remote_src: true
+  loop: "{{ __nginx_ssl_server_config_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: __nginx_ssl_server_config_results is defined and item is changed and item.backup_file is defined
+
+- name: Remove SSL vhosts if previous versions do not exist
+  file:
+    path: "{{ item.dest }}"
+    state: absent
+  loop: "{{ __nginx_ssl_server_config_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: __nginx_ssl_server_config_results is defined and item is changed and item.backup_file is not defined
+
+- name: Restore ssl.conf if previous version exists
+  copy:
+    src: "{{ __nginx_ssl_config_results.backup_file }}"
+    dest: "{{ nginx_conf_dir }}/conf.d/ssl.conf"
+    remote_src: true
+  when: __nginx_ssl_config_results is defined and __nginx_ssl_config_results is changed and __nginx_ssl_config_results.backup_file is defined
+
+- name: Remove ssl.conf if previous version does not exist
+  file:
+    path: "{{ nginx_conf_dir }}/conf.d/ssl.conf"
+    state: absent
+  when: ___nginx_ssl_config_results is defined and _nginx_ssl_config_results is changed and __nginx_ssl_config_results.backup_file is not defined
+
+- name: Disable newly enabled non-SSL vhosts
+  file:
+    path: "{{ item.dest }}"
+    state: absent
+  loop: "{{ __nginx_server_link_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: __nginx_server_link_results is defined and item is changed
+
+- name: Restore non-SSL vhosts if previous versions exist
+  copy:
+    src: "{{ item.backup_file }}"
+    dest: "{{ item.dest }}"
+    remote_src: true
+  loop: "{{ __nginx_server_config_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: __nginx_server_config_results is defined and item is changed and item.backup_file is defined
+
+- name: Remove non-SSL vhosts if previous versions do not exist
+  file:
+    path: "{{ item.dest }}"
+    state: absent
+  loop: "{{ __nginx_server_config_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: __nginx_server_config_results is defined and item is changed and item.backup_file is not defined
+
+- name: Restore extra nginx configs if previous versions exist
+  copy:
+    src: "{{ item.backup_file }}"
+    dest: "{{ item.dest }}"
+    remote_src: true
+  loop: "{{ __nginx_extra_configs_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: __nginx_extra_configs_results is defined and item is changed and item.backup_file is defined
+
+- name: Remove extra nginx configs if previous versions do not exist
+  file:
+    path: "{{ item.dest }}"
+    state: absent
+  loop: "{{ __nginx_extra_configs_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: __nginx_extra_configs_results is defined and item is changed and item.backup_file is not defined
+
+- name: Restore http_options.conf if previous version exists
+  copy:
+    src: "{{ __nginx_http_options_results.backup_file }}"
+    dest: "{{ nginx_conf_dir }}/conf.d/http_options.conf"
+    remote_src: true
+  when: __nginx_http_options_results is defined and __nginx_http_options_results is changed and __nginx_http_options_results.backup_file is defined
+
+- name: Remove http_options.conf if previous version does not exist
+  file:
+    path: "{{ nginx_conf_dir }}/conf.d/http_options.conf"
+    state: absent
+  when: ___nginx_http_options_results is defined and _nginx_http_options_results is changed and __nginx_http_options_results.backup_file is not defined
+
+# Is this useful or confusing?
+- name: Re-check config after restoring from backup
+  command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
+  when: nginx_check_conf and not ansible_check_mode
+  changed_when: false
+  ignore_errors: true
+  register: __nginx_config_retest_results
+
+- name: Fail due to previous configuration installation or validation errors
+  fail:
+    msg: >-
+      {{ (__nginx_config_retest_results is failed) | ternary(
+              "The new nginx configuration failed to install or validate so the previous configuration was "
+              "restored, however, the restored configuration also failed to validate, meaning that the previous "
+              "configuration was invalid or it was not properly restored. Please investigate the errors above for "
+              "more information.",
+              "The new nginx configuration failed to install or validate, so the previous configuration has been "
+              "restored. Please investigate the errors above for more information." ) }}
+

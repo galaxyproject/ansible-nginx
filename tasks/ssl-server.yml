@@ -1,24 +1,27 @@
 ---
 
-- name: Install vhost configs
+# This is almost an exact copy of server.yml, but is necessary because the register value is not templateable but must
+# be unique for restore on config test failure to work.
+
+- name: Install SSL vhost configs
   template:
     src: "{{ nginx_server_src_dir }}/{{ item }}.j2"
     dest: "{{ nginx_conf_dir }}/sites-available/{{ item | basename }}"
     mode: 0444
     backup: yes
-  loop: "{{ nginx_servers }}"
-  register: __nginx_server_config_results
+  loop: "{{ nginx_ssl_servers }}"
+  register: __nginx_ssl_server_config_results
   notify:
     - reload nginx
     - supervisorctl reload nginx
 
-- name: Enable vhosts
+- name: Enable SSL vhosts
   file:
     src: "{{ nginx_conf_dir }}/sites-available/{{ item | basename }}"
     dest: "{{ nginx_conf_dir }}/sites-enabled/{{ item | basename }}"
     state: link
-  loop: "{{ nginx_servers }}"
-  register: __nginx_server_link_results
+  loop: "{{ nginx_ssl_servers }}"
+  register: __nginx_ssl_server_link_results
   notify:
     - reload nginx
     - supervisorctl reload nginx
