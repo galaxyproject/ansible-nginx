@@ -14,7 +14,7 @@ galaxy_info:
     - bionic
     - focal
     - groovy
-    - hirsute
+    #- hirsute
   - name: Debian
     versions:
     - jessie

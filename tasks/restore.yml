@@ -124,4 +124,3 @@
               "more information.",
               "The new nginx configuration failed to install or validate, so the previous configuration has been "
               "restored. Please investigate the errors above for more information." ) }}
-
