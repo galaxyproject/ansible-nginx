@@ -22,7 +22,7 @@
     state: directory
     owner: "{{ nginx_conf_user | default('nginx') }}"
     group: "{{ nginx_conf_group | default('nginx') }}"
-    mode: 0700
+    mode: "0700"
   with_items:
     - /var/lib/nginx
     - /var/lib/nginx/tmp
@@ -32,6 +32,7 @@
     src: epel-nginx.conf.j2
     dest: "{{ nginx_conf_dir }}/nginx.conf"
     backup: yes
+    mode: "0644"
   notify:
     - restart nginx
     - supervisorctl restart nginx
@@ -40,7 +41,7 @@
   file:
     path: "{{ item }}"
     state: directory
-    mode: 0755
+    mode: "0755"
   with_items:
     - "{{ nginx_conf_dir }}/sites-available"
     - "{{ nginx_conf_dir }}/sites-enabled"
@@ -54,6 +55,7 @@
     content: |
       ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
       include {{ nginx_conf_dir }}/sites-enabled/*;
+    mode: "0644"
   notify:
     - reload nginx
     - supervisorctl reload nginx
@@ -64,6 +66,7 @@
     content: |
       ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
       return 302 {{ nginx_default_redirect_uri }};
+    mode: "0644"
   when: nginx_default_redirect_uri is defined
   notify:
     - reload nginx

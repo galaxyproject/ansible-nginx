@@ -49,6 +49,7 @@
   template:
     src: supervisord.conf.j2
     dest: "{{ supervisord_conf_dir }}/nginx.conf"
+    mode: "0644"
   notify:
     - update supervisord
   when: nginx_supervisor and supervisord_conf_dir is defined

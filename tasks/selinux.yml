@@ -7,6 +7,7 @@
       file:
         path: "{{ certbot_well_known_root }}"
         state: directory
+        mode: "0755"
 
     - name: "Allow nginx httpd_sys_content_t to access the well-known root"
       sefcontext:

@@ -28,6 +28,7 @@
   file:
     path: "{{ nginx_ssl_conf_dir }}"
     state: directory
+    mode: "0755"
 
 - name: Generate strong Diffie-Hellman group
   command: openssl dhparam -out {{ nginx_ssl_conf_dir }}/dhparams.pem 2048

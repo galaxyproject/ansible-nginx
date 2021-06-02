@@ -1,5 +1,7 @@
 ---
 galaxy_info:
+  role_name: nginx
+  namespace: galaxyproject
   author: The Galaxy Project
   description: Install and manage an nginx server.
   company: The Galaxy Project

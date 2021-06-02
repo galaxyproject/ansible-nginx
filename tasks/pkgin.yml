@@ -16,7 +16,7 @@
     state: directory
     owner: "{{ nginx_conf_user | default('www') }}"
     group: "{{ nginx_conf_group | default('www') }}"
-    mode: 0700
+    mode: "0700"
   with_items:
     - /var/db/nginx
 
@@ -25,6 +25,7 @@
     src: pkgin-nginx.conf.j2
     dest: "{{ nginx_conf_file }}"
     backup: yes
+    mode: "0644"
   notify:
     - restart nginx
     - supervisorctl restart nginx
@@ -33,7 +34,7 @@
   file:
     path: "{{ item }}"
     state: directory
-    mode: 0755
+    mode: "0755"
   with_items:
     - "{{ nginx_conf_dir }}/conf.d"
     - "{{ nginx_conf_dir }}/sites-available"
@@ -48,6 +49,7 @@
     content: |
       ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
       include {{ nginx_conf_dir }}/sites-enabled/*;
+    mode: "0644"
   notify:
     - reload nginx
     - supervisorctl reload nginx

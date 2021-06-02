@@ -9,7 +9,7 @@
   file:
     path: "{{ item | dirname }}"
     state: directory
-    mode: 0755
+    mode: "0755"
   with_items:
     - "{{ nginx_conf_ssl_certificate }}"
     - "{{ nginx_conf_ssl_certificate_key }}"
@@ -18,17 +18,19 @@
   copy:
     src: "{{ nginx_ssl_src_dir }}/{{ nginx_conf_ssl_certificate | basename }}"
     dest: "{{ nginx_conf_ssl_certificate }}"
+    mode: "0644"
 
 - name: Install SSL private key
   copy:
     content: "{{ sslkeys[nginx_conf_ssl_certificate_key | basename] }}"
     dest: "{{ nginx_conf_ssl_certificate_key }}"
-    mode: 0400
+    mode: "0400"
 
 - name: Install trusted certificates for OCSP with stapling
   copy:
     src: "{{ nginx_ssl_src_dir }}/{{ nginx_conf_ssl_trusted_certificate }}"
     dest: "{{ nginx_ssl_conf_dir }}/{{ nginx_conf_ssl_trusted_certificate }}"
+    mode: "0644"
   when: nginx_conf_ssl_trusted_certificate is defined
 
 - name: Include common SSL tasks
