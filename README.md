@@ -1,5 +1,4 @@
-nginx
-=====
+# nginx
 
 An [Ansible][ansible] role for installing and managing [nginx][nginx] servers.
 This role can install a version of nginx that includes the nginx upload module,
@@ -10,15 +9,13 @@ support for the Galaxy builds of nginx on Debian-based systems is a TODO item.
 [nginx]: http://nginx.org/
 [galaxy]: http://galaxyproject.org/
 
-Requirements
-------------
+## Requirements
 
 This role installs nginx from APT on Debian systems, EPEL on Enterprise Linux
 systems, or pkgin on SmartOS.  Other systems and installation methods are not
 supported.
 
-Role Variables
---------------
+## Role Variables
 
 All variables are optional.
 
@@ -39,7 +36,7 @@ All variables are optional.
 - `nginx_supervisor`: Run nginx under supervisor (requires setting certain supervisor variables).
 - `nginx_conf_dir` (default: `/etc/nginx`): nginx configuration directory
 
-#### SSL Configuration
+### SSL Configuration
 
 The `nginx_conf_ssl_certificate*` variables control the use of SSL. If unset, SSL will not be enabled. See Example
 Playbook for usage.
@@ -49,7 +46,7 @@ Playbook for usage.
 - `nginx_conf_ssl_ciphers`: The `ssl_ciphers` option in `nginx.conf`, this is a *list*.
 - `nginx_conf_ssl_protocols`: The `ssl_protocols` option in `nginx.conf`, this is a *list*.
 
-#### External SSL Configuration
+### External SSL Configuration
 
 - `nginx_ssl_role` (default: undefined): Role to run to set up SSL. This allows the use of (for example)
   [usegalaxy_eu.certbot][usegalaxy_eu-certbot], which typically must run after nginx is set up and running on port 80,
@@ -62,7 +59,7 @@ In this mode, the `nginx_conf_ssl_certificate*` variables should be absolute pat
 
 [usegalaxy_eu-certbot]: https://github.com/usegalaxy_eu/ansible-certbot/
 
-#### Playbook SSL Configuration
+### Playbook SSL Configuration
 
 If `nginx_ssl_role` is unset, you can use this role to copy your certificate and key from the playbook.
 
@@ -77,22 +74,24 @@ can be absolute paths to the files on the remote host. If this is the case, the 
 `nginx_ssl_src_dir` with the directory portion of the path stripped. If the path is not absolute, it is relative to
 `nginx_ssl_src_dir` for the source, and relative to `nginx_ssl_conf_dir` for the destination.
 
-#### SELinux
+### SELinux
 
 If SELinux is in enforcing mode, several additional actions will be taken:
 
 - If `certbot_well_known_root` is set, it will be updated to allow the type `httpd_sys_content_t` permissions on all subdirectories
 - `nginx_selinux_allow_local_connections` (default: `false`): Allow nginx to connect to localhost
 
-Dependencies
-------------
+## Dependencies
 
 Although not a requirement, [geerlingguy.repo-epel][repo-epel] can be used to enable EPEL with Ansible.
 
 [repo-epel]: https://galaxy.ansible.com/geerlingguy/repo-epel/
 
-Example Playbook
-----------------
+## Example Playbook
+
+Here are a few playbook examples depending on where you're getting your certificates
+
+### Local SSL Certificates
 
 Install nginx with SSL certs stored in the playbook (cert at `{{ playbook_dir }}/files/ssl/snakeoil_cert.pem`):
 
@@ -115,6 +114,8 @@ Install nginx with SSL certs stored in the playbook (cert at `{{ playbook_dir }}
   roles:
     - galaxyproject.nginx
 ```
+
+### Let's Encrypt
 
 Install nginx with SSL certs obtained from Let's Encrypt with Certbot using [usegalaxy_eu.certbot][usegalaxy_eu-certbot]:
 
@@ -154,6 +155,33 @@ server {
         root {{ certbot_well_known_root }};
     }
 }
+```
+
+### Self-Signed Certs
+
+Install nginx and use a generated and self-signed SSL certificate (good option for testing secured services behind a firewall)
+
+```yaml
+- name: Install and configure nginx
+  hosts: webservers
+  vars:
+    nginx_servers:
+      - vhost1
+      - vhost2
+    nginx_ssl_servers:
+      - vhost1_ssl
+      - vhost2_ssl
+    nginx_conf_http:
+      client_max_body_size: 1g
+    nginx_ssl_role: galaxyproject.self_signed_certs
+    openssl_domains: # Identical behaviour to certbot_domains
+      - vhost1.example.org
+      - vhost2.example.org
+    # These can be set to wherever you want your certificates and PK stored.
+    nginx_conf_ssl_certificate_key: /etc/ssl/private/{{ openssl_domains[0] }}.pem
+    nginx_conf_ssl_certificate: /etc/ssl/certs/{{ openssl_domains[0] }}.crt
+  roles:
+    - galaxyproject.nginx
 ```
 
 License
