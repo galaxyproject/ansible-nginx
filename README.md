@@ -52,7 +52,7 @@ Playbook for usage.
 #### External SSL Configuration
 
 - `nginx_ssl_role` (default: undefined): Role to run to set up SSL. This allows the use of (for example)
-  [usegalaxy-eu.certbot][usegalaxy-eu-certbot], which typically must run after nginx is set up and running on port 80,
+  [usegalaxy_eu.certbot][usegalaxy_eu-certbot], which typically must run after nginx is set up and running on port 80,
   but before nginx attempts to use SSL (since until certbot runs, the certs that nginx expects do not exist yet).
   Setting this will cause the SSL role to be run at the appropriate point in this role. See also `nginx_ssl_servers`.
 - `nginx_conf_ssl_certificate`: File name of the SSL certificate.
@@ -60,7 +60,7 @@ Playbook for usage.
 
 In this mode, the `nginx_conf_ssl_certificate*` variables should be absolute paths.
 
-[usegalaxy-eu-certbot]: https://github.com/usegalaxy-eu/ansible-certbot/
+[usegalaxy_eu-certbot]: https://github.com/usegalaxy_eu/ansible-certbot/
 
 #### Playbook SSL Configuration
 
@@ -116,7 +116,7 @@ Install nginx with SSL certs stored in the playbook (cert at `{{ playbook_dir }}
     - galaxyproject.nginx
 ```
 
-Install nginx with SSL certs obtained from Let's Encrypt with Certbot using [usegalaxy-eu.certbot][usegalaxy-eu-certbot]:
+Install nginx with SSL certs obtained from Let's Encrypt with Certbot using [usegalaxy_eu.certbot][usegalaxy_eu-certbot]:
 
 ```yaml
 - name: Install and configure nginx
@@ -132,7 +132,7 @@ Install nginx with SSL certs obtained from Let's Encrypt with Certbot using [use
       - vhost2_ssl
     nginx_conf_http:
       client_max_body_size: 1g
-    nginx_ssl_role: usegalaxy-eu.certbot
+    nginx_ssl_role: usegalaxy_eu.certbot
     certbot_auth_method: --webroot
     certbot_domains:
       - vhost1.example.org
