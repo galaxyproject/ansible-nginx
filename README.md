@@ -30,6 +30,7 @@ All variables are optional.
 - `nginx_ssl_servers`: Like `nginx_servers`, but only installed if SSL is configured.
 - `nginx_conf_http`: Set arbitrary options in the `http {}` section of `nginx.conf`. This is a hash (dictionary) where
   keys are nginx config options and values are the option's value.
+- `nginx_conf_http_multiline_option`: Set an arbitrary multiline option in the `http {}` section of `nginx.conf`.
 - `nginx_default_redirect_uri`: When using nginx from EPEL, a default virtualhost is enabled. This option controls what
   URI the default virtualhost should be redirected to. nginx variables are supported.
 - `nginx_enable_default_server` (default: `true`): Enable/disable the default EPEL virtualhost.
