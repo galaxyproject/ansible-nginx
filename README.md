@@ -1,9 +1,6 @@
 # nginx
 
 An [Ansible][ansible] role for installing and managing [nginx][nginx] servers.
-This role can install a version of nginx that includes the nginx upload module,
-which [Galaxy][galaxy] uses, **on Enterprise Linux-based systems only.** Adding
-support for the Galaxy builds of nginx on Debian-based systems is a TODO item.
 
 [ansible]: http://www.ansible.com/
 [nginx]: http://nginx.org/
@@ -24,7 +21,7 @@ All variables are optional.
 - `nginx_flavor` (default: `full`): nginx package to install (for choices, see the `nginx` metapackage providers for
   your Debian-based distribution). On RedHat-based distributions, this can either be `galaxy` (for "Galaxy nginx", which
   includes the nginx upload and pam modules), or any other value for EPEL nginx. This value is not used on pkgin/SmartOS
-  installations.
+  installations. Generally TUS can be used and `full` is a safe default for the future.
 - `nginx_servers`: A list of `server {}` (virtualhost) templates (relative to `templates/nginx/`, file ending `.j2` is
   automatically added to list entries when searching).
 - `nginx_ssl_servers`: Like `nginx_servers`, but only installed if SSL is configured.
