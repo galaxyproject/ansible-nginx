@@ -37,7 +37,7 @@
     - restart nginx
     - supervisorctl restart nginx
 
-- name: Create virtual host directories
+- name: Create virtual host and modules directories
   file:
     path: "{{ item }}"
     state: directory
@@ -45,9 +45,22 @@
   with_items:
     - "{{ nginx_conf_dir }}/sites-available"
     - "{{ nginx_conf_dir }}/sites-enabled"
+    - "{{ nginx_conf_dir }}/modules-enabled"
   notify:
     - reload nginx
     - supervisorctl reload nginx
+
+- name: Configure module loading
+  copy:
+    dest: "/etc/nginx/modules-enabled/{{ item.order | default('50') }}-{{ item.path | basename | splitext | first }}.conf" 
+    content: |
+      ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
+      load_module {{ (item.path is abs) | ternary("", "/usr/lib64/nginx/modules/") }}{{ item.path }};
+    mode: "0644"
+  loop: "{{ nginx_load_modules }}"
+  notify:
+    - restart nginx
+    - supervisorctl restart nginx
 
 - name: Create config including virtual hosts
   copy:
