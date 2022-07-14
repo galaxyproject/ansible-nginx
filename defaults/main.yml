@@ -48,6 +48,13 @@ nginx_supervisor_service_name: nginx
 # enable ipv6 for the default vhost?
 nginx_enable_default_ipv6: true
 
+# load modules - only implemented for EL/EPEL installs
+nginx_load_modules: []
+#  - order: 50
+#    path: ngx_foo.so       # in default path /usr/lib64/nginx/modules
+#  - order: 99
+#    path: /path/to/ngx_bar.so
+
 # server block template files to install
 nginx_servers: "{{ nginx_configs | default([]) }}"
 #nginx_ssl_servers: []
