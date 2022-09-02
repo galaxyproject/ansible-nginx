@@ -24,7 +24,7 @@
   copy:
     content: "{{ sslkeys[nginx_conf_ssl_certificate_key | basename] }}"
     dest: "{{ nginx_conf_ssl_certificate_key }}"
-    mode: "0400"
+    mode: "{{ nginx_conf_ssl_certificate_key_mode | default(0400) }}"
 
 - name: Install trusted certificates for OCSP with stapling
   copy:
