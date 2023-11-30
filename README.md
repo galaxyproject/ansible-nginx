@@ -54,7 +54,7 @@ Playbook for usage.
 
 In this mode, the `nginx_conf_ssl_certificate*` variables should be absolute paths.
 
-[usegalaxy_eu-certbot]: https://github.com/usegalaxy_eu/ansible-certbot/
+[usegalaxy_eu-certbot]: https://github.com/usegalaxy-eu/ansible-certbot/
 
 ### Playbook SSL Configuration
 
