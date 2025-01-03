@@ -6,29 +6,25 @@ galaxy_info:
   description: Install and manage an nginx server.
   company: The Galaxy Project
   license: AFL v3.0
-  min_ansible_version: 2.7
+  min_ansible_version: "2.11"
   github_branch: main
   platforms:
-  - name: Ubuntu
-    versions:
-    - bionic
-    - focal
-    - groovy
-    #- hirsute
-  - name: Debian
-    versions:
-    - jessie
-    - stretch
-    - buster
-    - bullseye
-  - name: EL
-    versions:
-    - 7
-    - 8
-  - name: SmartOS
-    versions:
-    - all
-    - any
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: SmartOS
+      versions:
+        - all
   galaxy_tags:
     - web
+    - nginx
 dependencies: []

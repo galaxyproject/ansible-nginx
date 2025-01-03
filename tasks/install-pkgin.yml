@@ -1,17 +1,16 @@
 ---
 
 - name: Include pkgin-specific variables
-  include_vars: pkgin.yml
+  ansible.builtin.include_vars: pkgin.yml
 
 - name: Install nginx
-  pkgin:
-    pkg: nginx
+  community.general.pkgin:
+    name: nginx
   notify:
-    - restart nginx
-    - supervisorctl restart nginx
+    - Restart nginx
 
 - name: Set permissions on temporary directories
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ nginx_conf_user | default('www') }}"
@@ -21,17 +20,16 @@
     - /var/db/nginx
 
 - name: Template nginx config file
-  template:
+  ansible.builtin.template:
     src: pkgin-nginx.conf.j2
     dest: "{{ nginx_conf_file }}"
-    backup: yes
+    backup: true
     mode: "0644"
   notify:
-    - restart nginx
-    - supervisorctl restart nginx
+    - Restart nginx
 
 - name: Create local config directories
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: "0755"
@@ -40,16 +38,14 @@
     - "{{ nginx_conf_dir }}/sites-available"
     - "{{ nginx_conf_dir }}/sites-enabled"
   notify:
-    - reload nginx
-    - supervisorctl reload nginx
+    - Reload nginx
 
 - name: Create config including virtual hosts
-  copy:
+  ansible.builtin.copy:
     dest: "{{ nginx_conf_dir }}/conf.d/sites-enabled.conf"
     content: |
       ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
       include {{ nginx_conf_dir }}/sites-enabled/*;
     mode: "0644"
   notify:
-    - reload nginx
-    - supervisorctl reload nginx
+    - Reload nginx

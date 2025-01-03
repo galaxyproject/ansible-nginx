@@ -1,37 +1,48 @@
 ---
 
-- name: Make SSL certificate/key paths absolute
-  set_fact:
-    nginx_conf_ssl_certificate: "{{ nginx_ssl_conf_dir ~ '/' ~ nginx_conf_ssl_certificate if nginx_conf_ssl_certificate.0 != '/' else nginx_conf_ssl_certificate }}"
-    nginx_conf_ssl_certificate_key: "{{ nginx_ssl_conf_dir ~ '/' ~ nginx_conf_ssl_certificate_key if nginx_conf_ssl_certificate_key.0 != '/' else nginx_conf_ssl_certificate_key }}"
-
-- name: Create SSL directories
-  file:
-    path: "{{ item | dirname }}"
+- name: Create SSL directory
+  ansible.builtin.file:
+    path: "{{ nginx_ssl_conf_dir }}"
     state: directory
     mode: "0755"
-  with_items:
-    - "{{ nginx_conf_ssl_certificate }}"
-    - "{{ nginx_conf_ssl_certificate_key }}"
+    owner: root
+    group: root
 
 - name: Install SSL certificate
-  copy:
-    src: "{{ nginx_ssl_src_dir }}/{{ nginx_conf_ssl_certificate | basename }}"
-    dest: "{{ nginx_conf_ssl_certificate }}"
+  ansible.builtin.copy:
+    src: "{{ nginx_ssl_src_dir }}/{{ nginx_conf_ssl_certificate }}"
+    dest: "{{ nginx_ssl_conf_dir }}/{{ nginx_conf_ssl_certificate | basename }}"
     mode: "0644"
+    owner: root
+    group: root
+  when: nginx_conf_ssl_certificate.0 != '/'
 
 - name: Install SSL private key
-  copy:
-    content: "{{ sslkeys[nginx_conf_ssl_certificate_key | basename] }}"
-    dest: "{{ nginx_conf_ssl_certificate_key }}"
-    mode: "{{ nginx_conf_ssl_certificate_key_mode | default(0400) }}"
+  ansible.builtin.copy:
+    src: "{{ nginx_ssl_src_dir }}/{{ nginx_conf_ssl_certificate_key }}"
+    dest: "{{ nginx_ssl_conf_dir }}/{{ nginx_conf_ssl_certificate_key | basename }}"
+    mode: "{{ nginx_conf_ssl_certificate_key_mode | default('0400') }}"
+    owner: root
+    group: root
+  when: nginx_conf_ssl_certificate_key.0 != '/'
 
 - name: Install trusted certificates for OCSP with stapling
-  copy:
+  ansible.builtin.copy:
     src: "{{ nginx_ssl_src_dir }}/{{ nginx_conf_ssl_trusted_certificate }}"
-    dest: "{{ nginx_ssl_conf_dir }}/{{ nginx_conf_ssl_trusted_certificate }}"
+    dest: "{{ nginx_ssl_conf_dir }}/{{ nginx_conf_ssl_trusted_certificate | basename }}"
     mode: "0644"
-  when: nginx_conf_ssl_trusted_certificate is defined
+    owner: root
+    group: root
+  when: nginx_conf_ssl_trusted_certificate is defined and nginx_conf_ssl_trusted_certificate.0 != '/'
+
+- name: Make SSL certificate/key paths absolute for config
+  ansible.builtin.set_fact:
+    nginx_conf_ssl_certificate: >-
+      {{ nginx_ssl_conf_dir ~ '/' ~ nginx_conf_ssl_certificate if nginx_conf_ssl_certificate.0 != '/' else nginx_conf_ssl_certificate }}
+    nginx_conf_ssl_certificate_key: >-
+      {{ nginx_ssl_conf_dir ~ '/' ~ nginx_conf_ssl_certificate_key if nginx_conf_ssl_certificate_key.0 != '/' else nginx_conf_ssl_certificate_key }}
+    nginx_conf_ssl_trusted_certificate: >-
+      {{ nginx_ssl_conf_dir ~ '/' ~ nginx_conf_ssl_trusted_certificate if nginx_conf_ssl_trusted_certificate.0 != '/' else nginx_conf_ssl_trusted_certificate }}
 
 - name: Include common SSL tasks
-  import_tasks: ssl-common.yml
+  ansible.builtin.import_tasks: ssl-common.yml

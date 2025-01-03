@@ -1,36 +1,46 @@
 ##
 ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
 ##
+{% if nginx_conf_ssl_protocols %}
 
 # Allowable SSL protocols
-{% if nginx_conf_ssl_protocols is defined %}
 ssl_protocols {{ nginx_conf_ssl_protocols | join(' ') }};
-{% elif nginx_version is version_compare('1.13.0', '>=') and nginx_openssl_version is version_compare('1.1.1', '>=') %}
-ssl_protocols TLSv1.2 TLSv1.3;
-{% elif nginx_version is version_compare('1.1.13', '>=') and nginx_openssl_version is version_compare('1.0.1', '>=') %}
-ssl_protocols TLSv1.2;
-{% elif nginx_version is version_compare('1.0.12', '>=') and nginx_openssl_version is version_compare('1.0.1', '>=') %}
-ssl_protocols TLSv1.1;
-{% else %}
-ssl_protocols TLSv1;
 {% endif %}
+{% if nginx_conf_ssl_ciphers %}
 
 # Use secure ciphers
 ssl_ciphers {{ nginx_conf_ssl_ciphers | join(':') }};
-ssl_dhparam {{ nginx_ssl_conf_dir }}/dhparams.pem;
-ssl_prefer_server_ciphers on;
-
-# Enable session reuse
-ssl_session_cache shared:SSL:8m;
-ssl_session_timeout 5m;
+{% endif %}
 
 # Cert/Key
-ssl_certificate {{ nginx_conf_ssl_certificate }};
-ssl_certificate_key {{ nginx_conf_ssl_certificate_key }};
+ssl_certificate {{ nginx_ssl_conf_dir ~ '/' ~ (nginx_conf_ssl_certificate | basename) if nginx_conf_ssl_certificate.0 != '/' else nginx_conf_ssl_certificate }};
+ssl_certificate_key {{ nginx_ssl_conf_dir ~ '/' ~ (nginx_conf_ssl_certificate_key | basename) if nginx_conf_ssl_certificate_key.0 != '/' else nginx_conf_ssl_certificate_key }};
+{% if nginx_conf_ssl_stapling is defined %}
 
-{% if nginx_conf_ssl_trusted_certificate is defined %}
 # OCSP stapling
-ssl_stapling on;
-ssl_stapling_verify on;
-ssl_trusted_certificate {{ nginx_ssl_conf_dir }}/{{ nginx_conf_ssl_trusted_certificate }};
+ssl_stapling {{ nginx_conf_ssl_stapling }};
+ssl_stapling_verify {{ nginx_conf_ssl_stapling_verify }};
+{% endif %}
+{% if nginx_conf_ssl_trusted_certificate is defined %}
+ssl_trusted_certificate {{ nginx_ssl_conf_dir ~ '/' ~ (nginx_conf_ssl_trusted_certificate | basename) if nginx_conf_ssl_trusted_certificate.0 != '/' else nginx_conf_ssl_trusted_certificate }};
+{% endif %}
+
+# Additional SSL options
+{% if nginx_conf_ssl_ecdh_curve %}
+ssl_ecdh_curve {{ nginx_conf_ssl_ecdh_curve }};
+{% endif %}
+{% if nginx_conf_ssl_prefer_server_ciphers %}
+ssl_prefer_server_ciphers {{ nginx_conf_ssl_prefer_server_ciphers }};
+{% endif %}
+{% if nginx_conf_ssl_dhparam %}
+ssl_dhparam {{ nginx_conf_ssl_dhparam }};
+{% endif %}
+{% if nginx_conf_ssl_session_timeout %}
+ssl_session_timeout {{ nginx_conf_ssl_session_timeout }};
+{% endif %}
+{% if nginx_conf_ssl_session_cache %}
+ssl_session_cache {{ nginx_conf_ssl_session_cache }};
+{% endif %}
+{% if nginx_conf_ssl_session_tickets %}
+ssl_session_tickets {{ nginx_conf_ssl_session_tickets }};
 {% endif %}

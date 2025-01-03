@@ -10,7 +10,6 @@ user {{ nginx_conf_user | default('nginx') }}{{ " " ~ nginx_conf_group if nginx_
 worker_processes {{ nginx_conf_worker_processes | default('auto') }};
 error_log /var/log/nginx/error.log;
 pid {{ "/run" if ansible_os_family == "RedHat" and ansible_distribution_major_version == "7" else "/var/run" }}/nginx.pid;
-daemon {{ "off" if nginx_supervisor else "on" }};
 include /etc/nginx/modules-enabled/*.conf;
 
 events {

@@ -1,30 +1,29 @@
 ---
 
 - name: SELinux task block for certbot_well_known_root
+  when: certbot_well_known_root is defined
   block:
 
     - name: Ensure that certbot_well_known_root exists
-      file:
+      ansible.builtin.file:
         path: "{{ certbot_well_known_root }}"
         state: directory
         mode: "0755"
 
     - name: "Allow nginx httpd_sys_content_t to access the well-known root"
-      sefcontext:
+      community.general.sefcontext:
         target: '{{ certbot_well_known_root }}(/.*)?'
         setype: httpd_sys_content_t
         state: present
-      register: update_fcontexts
+      register: __nginx_update_fcontexts
 
-    - name: Apply new SELinux file context to filesystem
-      command: "restorecon -rv {{ certbot_well_known_root }}"
-      when: update_fcontexts.changed
-
-  when: certbot_well_known_root is defined
+    - name: Apply new SELinux file context to filesystem  # noqa: no-changed-when no-handler
+      ansible.builtin.command: "restorecon -rv {{ certbot_well_known_root }}"
+      when: __nginx_update_fcontexts.changed
 
 - name: "Allow connecting to localhost"
-  seboolean:
+  ansible.posix.seboolean:
     name: httpd_can_network_connect
-    state: yes
-    persistent: yes
+    state: true
+    persistent: true
   when: nginx_selinux_allow_local_connections

@@ -1,26 +1,24 @@
 ---
 
 - name: Install vhost configs
-  template:
+  ansible.builtin.template:
     src: "{{ nginx_server_src_dir }}/{{ item }}.j2"
     dest: "{{ nginx_conf_dir }}/sites-available/{{ item | basename }}"
-    mode: 0444
-    backup: yes
+    mode: "0444"
+    backup: true
   loop: "{{ nginx_servers }}"
   register: __nginx_server_config_results
   notify:
-    - reload nginx
-    - supervisorctl reload nginx
+    - Reload nginx
 
 - name: Enable vhosts
-  file:
+  ansible.builtin.file:
     src: "{{ nginx_conf_dir }}/sites-available/{{ item | basename }}"
     dest: "{{ nginx_conf_dir }}/sites-enabled/{{ item | basename }}"
     state: link
   loop: "{{ nginx_servers }}"
   register: __nginx_server_link_results
   notify:
-    - reload nginx
-    - supervisorctl reload nginx
+    - Reload nginx
   # Ansible will exit due to src file missing.
   when: not ansible_check_mode

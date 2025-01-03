@@ -1,102 +1,86 @@
 ---
 # main tasks file for galaxyproject.nginx
 
-- include_tasks: apt.yml
-  when: ansible_os_family == "Debian"
-
-- include_tasks: yum.yml
-  when: ansible_os_family == "RedHat"
-
-- include_tasks: pkgin.yml
-  when: ansible_pkg_mgr == "pkgin"
+- name: Include install tasks
+  ansible.builtin.include_tasks: "install-{{ ansible_pkg_mgr }}.yml"
 
 - name: Collect nginx -V output
-  command: "{{ nginx_command }} -V"
-  register: nginx_v_out
+  ansible.builtin.command: "{{ nginx_command }} -V"
+  register: __nginx_v_out
   changed_when: false
 
 - name: Make nginx -V output a single line
-  set_fact:
-    nginx_v: "{{ nginx_v_out.stderr | regex_replace('\\n', ' ') }}"
+  ansible.builtin.set_fact:
+    __nginx_v: "{{ __nginx_v_out.stderr | regex_replace('\\n', ' ') }}"
   when: not ansible_check_mode
 
 - name: Register nginx-reported facts
-  set_fact:
-    nginx_version: "{{ nginx_v | regex_replace('.*nginx version: nginx/([\\d.]+).*', '\\1') }}"
-    nginx_openssl_version: "{{ nginx_v | regex_replace('.*built with OpenSSL ([\\d.]+[a-z]*).*', '\\1') }}"
+  ansible.builtin.set_fact:
+    nginx_version: "{{ __nginx_v | regex_replace('.*nginx version: nginx/([\\d.]+).*', '\\1') }}"
+    nginx_openssl_version: "{{ __nginx_v | regex_replace('.*built with OpenSSL ([\\d.]+[a-z]*).*', '\\1') }}"
   when: not ansible_check_mode
 
 - name: Register fake news nginx facts
-  set_fact:
-    nginx_version: "1.12.2"
-    nginx_openssl_version: "1.0.2k"
+  ansible.builtin.set_fact:
+    nginx_version: "1.14.1"
+    nginx_openssl_version: "1.1.1"
   when: ansible_check_mode
 
 - name: Admit to fake news nginx facts
-  debug:
+  ansible.builtin.debug:
     msg: >-
       The nginx/openssl version cannot be detected in check mode. We have picked an arbitrary version and set that,
       allowing check mode to function properly. This can and will produce unexpected and untrue diffs of predicted
       changes, when your system nginx/openssl version differs from the arbitrary values we have chosen. You can find the
       correct values by running nginx -V on your server, and can override these values with --extra-vars
-      'nginx_version=1.12.2 nginx_openssl_version=1.0.2k'
+      'nginx_version=1.14.1 nginx_openssl_version=1.1.1'
   when: ansible_check_mode
 
-- include_tasks: selinux.yml
+- name: Include SELinux tasks
+  ansible.builtin.include_tasks: selinux.yml
   when: ansible_selinux.status == "enabled"
-
-- name: Create supervisor config
-  template:
-    src: supervisord.conf.j2
-    dest: "{{ supervisord_conf_dir }}/nginx.conf"
-    mode: "0644"
-  notify:
-    - update supervisord
-  when: nginx_supervisor and supervisord_conf_dir is defined
 
 - name: Non-SSL configuration test block
   block:
 
     - name: Set additional config options
-      template:
+      ansible.builtin.template:
         src: http_options.conf.j2
         dest: "{{ nginx_conf_dir }}/conf.d/http_options.conf"
-        mode: 0444
-        backup: yes
+        mode: "0644"
+        backup: true
       when: nginx_conf_http is defined
       register: __nginx_http_options_results
       notify:
-        - restart nginx
-        - supervisorctl restart nginx
+        - Restart nginx
 
     - name: Copy additional configs
-      template:
+      ansible.builtin.template:
         src: "templates/nginx/{{ item }}.j2"
         dest: "{{ nginx_conf_dir }}/{{ item }}"
-        mode: 0444
-        backup: yes
+        mode: "0644"
+        backup: true
       loop: "{{ nginx_extra_configs | default([]) }}"
       register: __nginx_extra_configs_results
       when: nginx_extra_configs is defined
 
     - name: Include server (vhost) tasks
-      import_tasks: server.yml
+      ansible.builtin.import_tasks: server.yml
 
     - name: Check non-SSL nginx config
-      command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
+      ansible.builtin.command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
       when: nginx_check_conf and not ansible_check_mode
       changed_when: false
 
   rescue:
 
     - name: Include restore tasks
-      #import_tasks: restore.yml
-      include_tasks: restore.yml
+      ansible.builtin.include_tasks: restore.yml
       when: nginx_check_conf and not ansible_check_mode
 
     # If nginx_check_conf is enabled and we're not running in Ansible check mode, this won't be reached
     - name: Fail due to previous configuration installation errors
-      fail:
+      ansible.builtin.fail:
         msg: >-
           Installing the nginx configuration failed, so the previous configuration has been restored. Please investigate
           the errors above for more information.
@@ -105,44 +89,32 @@
   block:
 
     - name: Include SSL configuration tasks
-      include_tasks: ssl-{{ __nginx_sslmode }}.yml
+      ansible.builtin.include_tasks: ssl-{{ __nginx_sslmode }}.yml
       when: __nginx_ssl
 
     - name: Include SSL server (vhost) tasks
-      #import_tasks: server.yml
-      #vars:
-      #  nginx_servers: "{{ nginx_ssl_servers | default([]) }}"
-      include_tasks: ssl-server.yml
+      ansible.builtin.include_tasks: ssl-server.yml
       when: nginx_ssl_servers is defined
 
     - name: Check SSL nginx config
-      command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
+      ansible.builtin.command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
       when: nginx_check_conf and not ansible_check_mode
       changed_when: false
 
   rescue:
 
     - name: Include restore tasks
-      include_tasks: restore.yml
+      ansible.builtin.include_tasks: restore.yml
       when: nginx_check_conf and not ansible_check_mode
 
     - name: Fail due to previous configuration installation errors
-      fail:
+      ansible.builtin.fail:
         msg: >-
           Installing the nginx SSL configuration failed, so the previous configuration has been restored. Please
           investigate the errors above for more information.
 
-- name: Enable nginx (supervisor)
-  supervisorctl:
-    name: "{{ nginx_supervisor_service_name }}"
-    state: started
-    config: "{{ supervisord_conf_path | default(omit) }}"
-    supervisorctl_path: "{{ supervisord_prefix }}/bin/supervisorctl"
-  when: nginx_supervisor and supervisord_prefix is defined
-
 - name: Enable nginx (service)
-  service:
+  ansible.builtin.service:
     name: nginx
     state: started
     enabled: true
-  when: not nginx_supervisor
