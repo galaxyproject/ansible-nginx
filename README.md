@@ -18,7 +18,7 @@ All variables are optional.
 ### General Configuration
 
 | name | default | description |
-| --- | --- |
+| --- | --- | --- |
 | `nginx_flavor` | `core` | nginx package to install (for choices, see the `nginx` metapackage providers for your Debian-based distribution, the value is the package name after `nginx-`). Ignored on RedHat- and pkgin-based distributions. |
 | `nginx_servers` | empty list | A list of `server {}` (virtualhost) templates (relative to `nginx_server_src_dir`, file ending `.j2` is automatically added to list entries when searching). |
 | `nginx_ssl_servers` | empty list | Like `nginx_servers`, but only installed if SSL is configured. |
@@ -51,6 +51,7 @@ Generator][mozconfig] tool, with the following caveats:
 ### Common SSL Configuration options
 
 | name | default | description |
+| --- | --- | --- |
 | `nginx_ssl_config_profile` | `default` | Which Mozilla SSL Configuration Generator profile to use (`modern`, `intermediate`), or `default` to disable profile defaults. |
 | `nginx_ssl_conf_dir` | `{{ nginx_conf_dir }}/ssl` | Remote directory where SSL certificates, keys, and other SSL-related files will be copied to. |
 | `nginx_conf_ssl_certificate` | undefined | File name of the SSL certificate. |
@@ -71,6 +72,7 @@ The `nginx_conf_ssl_certificate` and `nginx_conf_ssl_certificate_key` variables 
 using this mode.
 
 | name | default | description |
+| --- | --- | --- |
 | `nginx_ssl_role` | undefined | Role to run to set up SSL. See also `nginx_ssl_servers`. |
 
 [usegalaxy_eu-certbot]: https://github.com/usegalaxy-eu/ansible-certbot/
@@ -84,6 +86,7 @@ Prior versions of this role expected SSL key contents to be found in a dictionar
 version 1.0.0, keys should be (vaulted) files in the playbook. **This is a breaking change in version 1.0.0.**
 
 | name | default | description |
+| --- | --- | --- |
 | `nginx_ssl_src_dir` | `files/ssl` | Playbook directory that will be searched for certificate and key files. |
 
 If the `nginx_conf_ssl_certificate` and `nginx_conf_ssl_certificate_key` variables are absolute paths, it is assumed
