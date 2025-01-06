@@ -84,6 +84,12 @@ __nginx_conf_ssl_ciphers:
     - DHE-RSA-AES256-GCM-SHA384
     - DHE-RSA-CHACHA20-POLY1305
 
+# ssl_prefer_server_ciphers option
+nginx_conf_ssl_prefer_server_ciphers: "{{ __nginx_conf_ssl_prefer_server_ciphers[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_prefer_server_ciphers:
+  modern: 'off'
+  intermediate: 'off'
+
 # ssl_session_timeout option
 nginx_conf_ssl_session_timeout: "{{ __nginx_conf_ssl_session_timeout[nginx_ssl_config_profile] | default(none) }}"
 __nginx_conf_ssl_session_timeout:
