@@ -1,18 +1,33 @@
 ---
-# defaults file for galaxyproject.nginx
 
-# Where should the role find ssl certificates to copy to the remote host (relative from where ansible-playbook is called
-# if not absolute)
-nginx_ssl_src_dir: files/ssl
+# "Flavor" of nginx to install
+# - for Debian-based distributions this is the apt package to install, following the `nginx-` portion of the name (e.g.
+#   `full` for `nginx-full`)
+# - for EL-based distributions, this is ignored
+nginx_flavor: core
+
+# server {} block template files to install, without the .j2 extension
+nginx_servers: "{{ nginx_configs | default([]) }}"
+
+# ssl server {} block template files to install, these are installed after SSL should be properly configured
+# nginx_ssl_servers: []
+
+# Where should the role find server {} block templates specified in `nginx_servers` and `nginx_ssl_servers`, relative to
+# Ansible search paths
 nginx_server_src_dir: templates/nginx
 
-# "flavor" of nginx to install
-nginx_flavor: full
-
-# where to install nginx configs
+# Where to install nginx configs
 nginx_conf_dir: /etc/nginx
 nginx_conf_file: "{{ nginx_conf_dir }}/nginx.conf"
 nginx_ssl_conf_dir: "{{ nginx_conf_dir }}/ssl"
+
+# Enable IPv6 for the default vhost?
+nginx_enable_default_ipv6: true
+
+nginx_selinux_allow_local_connections: false
+
+# Options for the http {} section of the nginx config, a dictionary
+# nginx_conf_http:
 
 # Path to the nginx binary for version and config checking (default will use whatever is on $PATH)
 nginx_command: nginx
@@ -20,46 +35,97 @@ nginx_command: nginx
 # Validate config with `nginx -t`, attempt to restore previous config upon validation failure
 nginx_check_conf: true
 
-# SSL defaults (version dependent ones such as ssl_protocols can be found in the template)
-nginx_conf_ssl_ciphers:
-  - ECDHE-ECDSA-AES128-GCM-SHA256
-  - ECDHE-ECDSA-AES256-GCM-SHA384
-  - ECDHE-ECDSA-AES128-SHA
-  - ECDHE-ECDSA-AES256-SHA
-  - ECDHE-ECDSA-AES128-SHA256
-  - ECDHE-ECDSA-AES256-SHA384
-  - ECDHE-RSA-AES128-GCM-SHA256
-  - ECDHE-RSA-AES256-GCM-SHA384
-  - ECDHE-RSA-AES128-SHA
-  - ECDHE-RSA-AES256-SHA
-  - ECDHE-RSA-AES128-SHA256
-  - ECDHE-RSA-AES256-SHA384
-  - DHE-RSA-AES128-GCM-SHA256
-  - DHE-RSA-AES256-GCM-SHA384
-  - DHE-RSA-AES128-SHA
-  - DHE-RSA-AES256-SHA
-  - DHE-RSA-AES128-SHA256
-  - DHE-RSA-AES256-SHA256
-
-# whether nginx will run from supervisor
-nginx_supervisor: false
-nginx_supervisor_service_name: nginx
-
-# enable ipv6 for the default vhost?
-nginx_enable_default_ipv6: true
-
-# load modules - only implemented for EL/EPEL installs
+# DSO modules to load - only implemented for EL/EPEL installs
 nginx_load_modules: []
 #  - order: 50
 #    path: ngx_foo.so       # in default path /usr/lib64/nginx/modules
 #  - order: 99
 #    path: /path/to/ngx_bar.so
 
-# server block template files to install
-nginx_servers: "{{ nginx_configs | default([]) }}"
-#nginx_ssl_servers: []
+#
+# SSL Options
+#
+
+# Mozilla SSL Configuration Generator profile (modern, intermediate, or default to disable profile), see README
+nginx_ssl_config_profile: default
+
+# Where should the role find SSL certificates to copy to the remote host, relative to the playbook_dir
+nginx_ssl_src_dir: files/ssl
+
+# ssl_protocols option
+nginx_conf_ssl_protocols: "{{ __nginx_conf_ssl_protocols[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_protocols:
+  modern:
+    - TLSv1.3
+  intermediate:
+    - TLSv1.2
+    - TLSv1.3
+  default:
+    - TLSv1.2
+    - TLSv1.3
+
+nginx_conf_ssl_ecdh_curve: "{{ __nginx_conf_ssl_ecdh_curve[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_ecdh_curve:
+  modern: X25519:prime256v1:secp384r1
+  intermediate: X25519:prime256v1:secp384r1
+
+# ssl_ciphers option
+nginx_conf_ssl_ciphers: "{{ __nginx_conf_ssl_ciphers[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_ciphers:
+  # all TLSv1.3 ciphers are currently secure, so no override is necessary for modern
+  intermediate:
+    - ECDHE-ECDSA-AES128-GCM-SHA256
+    - ECDHE-RSA-AES128-GCM-SHA256
+    - ECDHE-ECDSA-AES256-GCM-SHA384
+    - ECDHE-RSA-AES256-GCM-SHA384
+    - ECDHE-ECDSA-CHACHA20-POLY1305
+    - ECDHE-RSA-CHACHA20-POLY1305
+    - DHE-RSA-AES128-GCM-SHA256
+    - DHE-RSA-AES256-GCM-SHA384
+    - DHE-RSA-CHACHA20-POLY1305
+
+# ssl_prefer_server_ciphers option
+nginx_conf_ssl_prefer_server_ciphers: "{{ __nginx_conf_ssl_prefer_server_ciphers[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_prefer_server_ciphers:
+  modern: 'off'
+  intermediate: 'off'
+
+# ssl_session_timeout option
+nginx_conf_ssl_session_timeout: "{{ __nginx_conf_ssl_session_timeout[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_session_timeout:
+  intermediate: 4h
+
+# ssl_session_cache option
+nginx_conf_ssl_session_cache: "{{ __nginx_conf_ssl_session_cache[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_session_cache:
+  intermediate: shared:MozSSL:10m
+
+# ssl_session_tickets option
+nginx_conf_ssl_session_tickets: "{{ __nginx_conf_ssl_session_tickets[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_session_tickets:
+  modern: 'off'
+  intermediate: 'off'
+
+# ssl_dhparam option
+nginx_conf_ssl_dhparam: "{{ __nginx_conf_ssl_dhparam[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_dhparam:
+  # this is a path relative to nginx_ssl_conf_dir
+  intermediate: dhparams.pem
+
+# ssl_stapling option (OCSP)
+nginx_conf_ssl_stapling: "{{ __nginx_conf_ssl_stapling[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_stapling:
+  modern: 'on'
+  intermediate: 'on'
+
+# ssl_stapling_verify option (OCSP)
+nginx_conf_ssl_stapling_verify: "{{ __nginx_conf_ssl_stapling_verify[nginx_ssl_config_profile] | default(none) }}"
+__nginx_conf_ssl_stapling_verify:
+  modern: 'on'
+  intermediate: 'on'
+
+# ssl_trusted_certificate option (OCSP)
+# nginx_conf_ssl_trusted_certificate: path to root_CA_cert_plus_intermediates relative to nginx_ssl_conf_dir
 
 __nginx_ssl: "{{ nginx_conf_ssl_certificate is defined and nginx_conf_ssl_certificate_key is defined }}"
 __nginx_sslmode: "{{ 'external' if nginx_ssl_role is defined else 'internal' }}"
-
-nginx_selinux_allow_local_connections: false

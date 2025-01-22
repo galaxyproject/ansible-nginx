@@ -1,80 +1,66 @@
 ---
 
-- name: Install EPEL nginx
-  yum:
-    pkg: nginx
+- name: Install AppStream nginx
+  ansible.builtin.dnf:
+    name: nginx
   notify:
-    - restart nginx
-    - supervisorctl restart nginx
-  when: nginx_flavor != "galaxy"
-
-- name: Install Galaxy nginx
-  yum:
-    pkg: nginx-galaxy
-  notify:
-    - restart nginx
-    - supervisorctl restart nginx
-  when: nginx_flavor == "galaxy"
+    - Restart nginx
 
 - name: Set permissions on temporary directories
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ nginx_conf_user | default('nginx') }}"
     group: "{{ nginx_conf_group | default('nginx') }}"
     mode: "0700"
-  with_items:
+  loop:
     - /var/lib/nginx
     - /var/lib/nginx/tmp
 
 - name: Template nginx config file
-  template:
+  ansible.builtin.template:
     src: epel-nginx.conf.j2
     dest: "{{ nginx_conf_dir }}/nginx.conf"
-    backup: yes
+    backup: true
     mode: "0644"
   notify:
-    - restart nginx
-    - supervisorctl restart nginx
+    - Restart nginx
 
 - name: Create virtual host and modules directories
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: "0755"
-  with_items:
+  loop:
     - "{{ nginx_conf_dir }}/sites-available"
     - "{{ nginx_conf_dir }}/sites-enabled"
     - "{{ nginx_conf_dir }}/modules-enabled"
   notify:
-    - reload nginx
-    - supervisorctl reload nginx
+    - Reload nginx
 
 - name: Configure module loading
-  copy:
-    dest: "/etc/nginx/modules-enabled/{{ item.order | default('50') }}-{{ item.path | basename | splitext | first }}.conf" 
+  ansible.builtin.copy:
+    dest: "/etc/nginx/modules-enabled/{{ item.order | default('50') }}-{{ item.path | basename | splitext | first }}.conf"
     content: |
       ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
       load_module {{ (item.path is abs) | ternary("", "/usr/lib64/nginx/modules/") }}{{ item.path }};
     mode: "0644"
   loop: "{{ nginx_load_modules }}"
   notify:
-    - restart nginx
-    - supervisorctl restart nginx
+    - Restart nginx
 
 - name: Create config including virtual hosts
-  copy:
+  ansible.builtin.copy:
     dest: "{{ nginx_conf_dir }}/conf.d/sites-enabled.conf"
     content: |
       ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
       include {{ nginx_conf_dir }}/sites-enabled/*;
     mode: "0644"
   notify:
-    - reload nginx
-    - supervisorctl reload nginx
+    - Reload nginx
 
 - name: Set default server redirection
-  copy:
+  ansible.builtin.copy:
     dest: "{{ nginx_conf_dir }}/default.d/redirect.conf"
     content: |
       ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
@@ -82,5 +68,4 @@
     mode: "0644"
   when: nginx_default_redirect_uri is defined
   notify:
-    - reload nginx
-    - supervisorctl reload nginx
+    - Reload nginx

@@ -1,14 +1,14 @@
 ---
 
 - name: Install nginx (APT)
-  apt:
-    pkg: nginx-{{ nginx_flavor }}
+  ansible.builtin.apt:
+    name: nginx-{{ nginx_flavor }}
   notify:
-    - restart nginx
+    - Restart nginx
 
 - name: Disable default vhost
-  file:
+  ansible.builtin.file:
     path: /etc/nginx/sites-enabled/default
     state: absent
   notify:
-    - reload nginx
+    - Reload nginx
