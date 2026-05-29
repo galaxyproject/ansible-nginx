@@ -69,14 +69,14 @@
 
     - name: Check non-SSL nginx config
       ansible.builtin.command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
-      when: nginx_check_conf and not ansible_check_mode
+      when: nginx_check_conf | bool and not ansible_check_mode
       changed_when: false
 
   rescue:
 
     - name: Include restore tasks
       ansible.builtin.include_tasks: restore.yml
-      when: nginx_check_conf and not ansible_check_mode
+      when: nginx_check_conf | bool and not ansible_check_mode
 
     # If nginx_check_conf is enabled and we're not running in Ansible check mode, this won't be reached
     - name: Fail due to previous configuration installation errors
@@ -90,7 +90,7 @@
 
     - name: Include SSL configuration tasks
       ansible.builtin.include_tasks: ssl-{{ __nginx_sslmode }}.yml
-      when: __nginx_ssl
+      when: __nginx_ssl | bool
 
     - name: Include SSL server (vhost) tasks
       ansible.builtin.include_tasks: ssl-server.yml
@@ -98,14 +98,14 @@
 
     - name: Check SSL nginx config
       ansible.builtin.command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
-      when: nginx_check_conf and not ansible_check_mode
+      when: nginx_check_conf | bool and not ansible_check_mode
       changed_when: false
 
   rescue:
 
     - name: Include restore tasks
       ansible.builtin.include_tasks: restore.yml
-      when: nginx_check_conf and not ansible_check_mode
+      when: nginx_check_conf | bool and not ansible_check_mode
 
     - name: Fail due to previous configuration installation errors
       ansible.builtin.fail:
