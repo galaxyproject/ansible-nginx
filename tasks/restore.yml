@@ -109,7 +109,7 @@
 # Is this useful or confusing?
 - name: Re-check config after restoring from backup
   ansible.builtin.command: "{{ nginx_command }} -t -c {{ nginx_conf_file }}"
-  when: nginx_check_conf and not ansible_check_mode
+  when: nginx_check_conf | bool and not ansible_check_mode
   changed_when: false
   ignore_errors: true
   register: __nginx_config_retest_results

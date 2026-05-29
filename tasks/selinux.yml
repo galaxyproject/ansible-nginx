@@ -26,4 +26,4 @@
     name: httpd_can_network_connect
     state: true
     persistent: true
-  when: nginx_selinux_allow_local_connections
+  when: nginx_selinux_allow_local_connections | bool
