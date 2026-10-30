@@ -32,6 +32,4 @@
   ansible.builtin.command: openssl dhparam -out {{ nginx_ssl_conf_dir }}/dhparams.pem 2048
   args:
     creates: "{{ nginx_conf_ssl_dhparam }}"
-  # LOCAL PATCH (noted in requirements.yaml): bare string conditional fails under
-  # ansible-core 2.18+ strict conditionals (galaxyproject/ansible-nginx issue #25).
   when: nginx_conf_ssl_dhparam is truthy
