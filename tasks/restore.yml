@@ -41,8 +41,6 @@
   ansible.builtin.file:
     path: "{{ nginx_conf_dir }}/conf.d/ssl.conf"
     state: absent
-  # LOCAL PATCH: upstream has typo'd var names (___/_ instead of __), so this never ran and a
-  # freshly created ssl.conf survived a failed run, breaking the next run's non-SSL config check.
   when: __nginx_ssl_config_results is defined and __nginx_ssl_config_results is changed and __nginx_ssl_config_results.backup_file is not defined
 
 - name: Disable newly enabled non-SSL vhosts
