@@ -111,6 +111,9 @@ nginx_conf_ssl_dhparam: "{{ __nginx_conf_ssl_dhparam[nginx_ssl_config_profile] |
 __nginx_conf_ssl_dhparam:
   # this is a path relative to nginx_ssl_conf_dir
   intermediate: dhparams.pem
+# absolute path of the ssl_dhparam file
+__nginx_conf_ssl_dhparam_path: >-
+  {{ nginx_conf_ssl_dhparam if nginx_conf_ssl_dhparam is abs else nginx_ssl_conf_dir ~ '/' ~ nginx_conf_ssl_dhparam }}
 
 # ssl_stapling option (OCSP)
 nginx_conf_ssl_stapling: "{{ __nginx_conf_ssl_stapling[nginx_ssl_config_profile] | default(none) }}"
