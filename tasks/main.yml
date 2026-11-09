@@ -2,7 +2,7 @@
 # main tasks file for galaxyproject.nginx
 
 - name: Include install tasks
-  ansible.builtin.include_tasks: "install-{{ ansible_pkg_mgr }}.yml"
+  ansible.builtin.include_tasks: "install-{{ ansible_facts['pkg_mgr'] }}.yml"
 
 - name: Collect nginx -V output
   ansible.builtin.command: "{{ nginx_command }} -V"
@@ -38,7 +38,7 @@
 
 - name: Include SELinux tasks
   ansible.builtin.include_tasks: selinux.yml
-  when: ansible_selinux.status == "enabled"
+  when: ansible_facts['selinux']['status'] == "enabled"
 
 - name: Non-SSL configuration test block
   block:

@@ -30,7 +30,7 @@ http {
     tcp_nopush          on;
     tcp_nodelay         on;
     keepalive_timeout   65;
-    types_hash_max_size {{ (ansible_distribution_major_version is version('9', '<')) | ternary(2048, 4096) }};
+    types_hash_max_size {{ (ansible_facts['distribution_major_version'] is version('9', '<')) | ternary(2048, 4096) }};
 
     include             /etc/nginx/mime.types;
     default_type        application/octet-stream;
