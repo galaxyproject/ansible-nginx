@@ -1,11 +1,35 @@
 ---
 
-- name: Install AppStream nginx
+- name: Configure nginx.org repository
+  when: nginx_source == "nginx.org"
+  block:
+
+    - name: Add nginx.org repository
+      ansible.builtin.yum_repository:
+        name: "nginx-{{ nginx_org_channel }}"
+        description: "nginx {{ nginx_org_channel }} repo"
+        file: nginx
+        baseurl: >-
+          https://nginx.org/packages/{{ (nginx_org_channel == 'mainline') | ternary('mainline/', '') }}centos/{{
+          ansible_facts['distribution_major_version'] }}/$basearch/
+        gpgcheck: true
+        gpgkey: https://nginx.org/keys/nginx_signing.key
+        module_hotfixes: true
+
+    - name: Remove unused nginx.org repository
+      ansible.builtin.yum_repository:
+        name: "nginx-{{ (nginx_org_channel == 'mainline') | ternary('stable', 'mainline') }}"
+        file: nginx
+        state: absent
+
+- name: Install nginx
   ansible.builtin.dnf:
-    name: nginx
+    name: "{{ ['nginx'] + nginx_extra_packages }}"
   notify:
     - Restart nginx
 
+# nginx.org packages use /var/cache/nginx instead, which is world-traversable, and nginx chowns its temp directories to
+# the worker user at startup
 - name: Set permissions on temporary directories
   ansible.builtin.file:
     path: "{{ item }}"
@@ -16,6 +40,7 @@
   loop:
     - /var/lib/nginx
     - /var/lib/nginx/tmp
+  when: nginx_source == "os"
 
 - name: Template nginx config file
   ansible.builtin.template:
@@ -26,7 +51,7 @@
   notify:
     - Restart nginx
 
-- name: Create virtual host and modules directories
+- name: Create virtual host, modules, and default server directories
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
@@ -35,6 +60,19 @@
     - "{{ nginx_conf_dir }}/sites-available"
     - "{{ nginx_conf_dir }}/sites-enabled"
     - "{{ nginx_conf_dir }}/modules-enabled"
+    - "{{ nginx_conf_dir }}/default.d"
+  notify:
+    - Reload nginx
+
+# Emptied rather than removed, since the package would restore it on upgrade
+- name: Disable nginx.org package default server
+  ansible.builtin.copy:
+    dest: "{{ nginx_conf_dir }}/conf.d/default.conf"
+    content: |
+      ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
+      ## The default server is configured in nginx.conf
+    mode: "0644"
+  when: nginx_source == "nginx.org"
   notify:
     - Reload nginx
 

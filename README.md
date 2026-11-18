@@ -8,8 +8,11 @@ An [Ansible][ansible] role for installing and managing [nginx][nginx] servers.
 
 ## Requirements
 
-This role installs nginx from APT on Debian-based systems, the AppStream DNF repository on Enterprise Linux systems, or
-pkgin on SmartOS. Other systems and installation methods are not supported.
+This role installs nginx from APT on Debian-based systems, the AppStream DNF repository or the [official nginx.org
+repository][nginx-packages] on Enterprise Linux systems, or pkgin on SmartOS. Other systems and installation methods
+are not supported.
+
+[nginx-packages]: https://nginx.org/en/linux_packages.html
 
 ## Role Variables
 
@@ -19,15 +22,55 @@ All variables are optional.
 
 | name | default | description |
 | --- | --- | --- |
+| `nginx_source` | `os` | Where to install nginx from: `os` for the distribution's packages, or `nginx.org` for the official nginx.org repository (EL only, see [Installing from nginx.org](#installing-from-nginxorg)). |
+| `nginx_org_channel` | `stable` | nginx.org repository to use when `nginx_source` is `nginx.org`: `stable` or `mainline`. |
+| `nginx_extra_packages` | empty list | Additional packages to install on EL in the same transaction as nginx, such as dynamic modules. |
+| `nginx_load_modules` | empty list | Dynamic modules to load on EL, a list of dictionaries with keys `path` (relative to `/usr/lib64/nginx/modules`, or absolute) and `order` (default `50`). |
 | `nginx_flavor` | `core` | nginx package to install (for choices, see the `nginx` metapackage providers for your Debian-based distribution, the value is the package name after `nginx-`). Ignored on RedHat- and pkgin-based distributions. |
 | `nginx_servers` | empty list | A list of `server {}` (virtualhost) templates (relative to `nginx_server_src_dir`, file ending `.j2` is automatically added to list entries when searching). |
 | `nginx_ssl_servers` | empty list | Like `nginx_servers`, but only installed if SSL is configured. |
 | `nginx_conf_http` | undefined | Set arbitrary options in the `http {}` section of `nginx.conf`. This is a hash (dictionary) where keys are nginx config options and values are the option's value. |
-| `nginx_default_redirect_uri` | undefined | When using nginx from AppStream, a default `server {}` is enabled. This option controls what URI the default server should be redirected to. nginx variables are supported. |
-| `nginx_enable_default_server` | `true` | Enable/disable the default AppStream `server {}`. |
+| `nginx_default_redirect_uri` | undefined | On EL, a default `server {}` is enabled. This option controls what URI the default server should be redirected to. nginx variables are supported. |
+| `nginx_enable_default_server` | `true` | Enable/disable the default EL `server {}`. |
 | `nginx_conf_dir` | `/etc/nginx` | nginx configuration directory |
 | `nginx_user` | undefined (use distribution default) | User to run nginx as |
 | `nginx_group` | undefined (use distribution default) | Group to run nginx as |
+
+### Installing from nginx.org
+
+With `nginx_source: nginx.org`, the role configures the nginx.org `stable` or `mainline` repository and installs nginx
+from it. The package's default `server {}` in `conf.d/default.conf` is emptied, and the role's default server in
+`nginx.conf` is used instead, as with AppStream.
+
+The role does not replace an existing AppStream nginx: because nginx is already installed, the role leaves it in place,
+and a later `dnf upgrade` fails on file conflicts between `nginx-core` and the nginx.org package. To switch an existing
+host, replace it once the role has configured the nginx.org repository, then run the role again:
+
+```console
+# EL 9
+dnf swap --allowerasing nginx-core nginx
+# EL 8
+dnf upgrade nginx && dnf remove nginx-all-modules 'nginx-mod-*'
+```
+
+The AppStream dynamic module packages (`nginx-mod-*`) cannot be loaded by nginx.org nginx. On EL 9, `--allowerasing`
+removes them in the same transaction. `nginx-filesystem` can be left installed, since other packages may depend on it.
+
+Dynamic modules must be built for the exact nginx version they are loaded into, and packages built with
+[pkg-oss][pkg-oss] depend on that version. Modules from the nginx.org repository are upgraded alongside nginx. Modules
+from elsewhere should be published to a repository that is updated whenever nginx.org releases a new nginx, otherwise
+`dnf upgrade` cannot upgrade nginx until the matching module is available. Configure that repository before running the
+role, and install the module with `nginx_extra_packages` so that it is installed in the same transaction as nginx:
+
+```yaml
+nginx_source: nginx.org
+nginx_extra_packages:
+  - nginx-module-upload
+nginx_load_modules:
+  - path: ngx_http_upload_module.so
+```
+
+[pkg-oss]: https://github.com/nginx/pkg-oss
 
 ### SSL Configuration
 

@@ -1,5 +1,16 @@
 ---
 
+# Where to install nginx from
+# - os: the distribution's packages (APT on Debian-based, AppStream on EL, pkgin on SmartOS)
+# - nginx.org: the official nginx.org repository (EL only)
+nginx_source: os
+
+# nginx.org repository to use when nginx_source is nginx.org: stable or mainline
+nginx_org_channel: stable
+
+# Additional packages to install in the same transaction as nginx, such as dynamic modules (EL only)
+nginx_extra_packages: []
+
 # "Flavor" of nginx to install
 # - for Debian-based distributions this is the apt package to install, following the `nginx-` portion of the name (e.g.
 #   `full` for `nginx-full`)
