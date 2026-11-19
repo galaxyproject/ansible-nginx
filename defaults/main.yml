@@ -2,19 +2,19 @@
 
 # Where to install nginx from
 # - os: the distribution's packages (APT on Debian-based, AppStream on EL, pkgin on SmartOS)
-# - nginx.org: the official nginx.org repository (EL only)
+# - nginx.org: the official nginx.org repository (EL and Debian-based)
 nginx_source: os
 
 # nginx.org repository to use when nginx_source is nginx.org: stable or mainline
 nginx_org_channel: stable
 
-# Additional packages to install in the same transaction as nginx, such as dynamic modules (EL only)
+# Additional packages to install in the same transaction as nginx, such as dynamic modules (EL and Debian-based)
 nginx_extra_packages: []
 
 # "Flavor" of nginx to install
 # - for Debian-based distributions this is the apt package to install, following the `nginx-` portion of the name (e.g.
 #   `full` for `nginx-full`)
-# - for EL-based distributions, this is ignored
+# - for EL-based distributions and nginx_source: nginx.org, this is ignored
 nginx_flavor: core
 
 # server {} block template files to install, without the .j2 extension
@@ -46,10 +46,10 @@ nginx_command: nginx
 # Validate config with `nginx -t`, attempt to restore previous config upon validation failure
 nginx_check_conf: true
 
-# DSO modules to load - only implemented for EL/EPEL installs
+# DSO modules to load - only implemented for EL and nginx_source: nginx.org
 nginx_load_modules: []
 #  - order: 50
-#    path: ngx_foo.so       # in default path /usr/lib64/nginx/modules
+#    path: ngx_foo.so       # in /usr/lib64/nginx/modules on EL, /usr/lib/nginx/modules on Debian-based
 #  - order: 99
 #    path: /path/to/ngx_bar.so
 
@@ -143,3 +143,7 @@ __nginx_conf_ssl_stapling_verify:
 
 __nginx_ssl: "{{ nginx_conf_ssl_certificate is defined and nginx_conf_ssl_certificate_key is defined }}"
 __nginx_sslmode: "{{ 'external' if nginx_ssl_role is defined else 'internal' }}"
+
+# Directory containing dynamic modules
+__nginx_modules_dir: >-
+  {{ (ansible_facts['os_family'] == 'RedHat') | ternary('/usr/lib64/nginx/modules', '/usr/lib/nginx/modules') }}

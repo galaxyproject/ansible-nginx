@@ -2,9 +2,46 @@
 
 - name: Install nginx (APT)
   ansible.builtin.apt:
-    name: nginx-{{ nginx_flavor }}
+    name: "{{ ['nginx-' ~ nginx_flavor] + nginx_extra_packages }}"
+  when: nginx_source == "os"
   notify:
     - Restart nginx
+
+- name: Install nginx from nginx.org (APT)
+  when: nginx_source == "nginx.org"
+  block:
+
+    - name: Add nginx.org repository
+      ansible.builtin.deb822_repository:
+        name: nginx
+        types: deb
+        uris: >-
+          https://nginx.org/packages/{{ (nginx_org_channel == 'mainline') | ternary('mainline/', '') }}{{
+          ansible_facts['distribution'] | lower }}
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: nginx
+        signed_by: https://nginx.org/keys/nginx_signing.key
+      register: __nginx_org_repo
+
+    # Distributions may ship higher versions of nginx or of packages with the same names
+    - name: Prefer packages from the nginx.org repository
+      ansible.builtin.copy:
+        dest: /etc/apt/preferences.d/99nginx
+        content: |
+          ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
+          Package: *
+          Pin: origin nginx.org
+          Pin: release o=nginx
+          Pin-Priority: 900
+        mode: "0644"
+      register: __nginx_org_pin
+
+    - name: Install nginx (nginx.org)
+      ansible.builtin.apt:
+        name: "{{ ['nginx'] + nginx_extra_packages }}"
+        update_cache: "{{ __nginx_org_repo is changed or __nginx_org_pin is changed }}"
+      notify:
+        - Restart nginx
 
 - name: Disable default vhost
   ansible.builtin.file:

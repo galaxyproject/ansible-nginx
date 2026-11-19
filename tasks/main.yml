@@ -4,6 +4,10 @@
 - name: Include install tasks
   ansible.builtin.include_tasks: "install-{{ ansible_facts['pkg_mgr'] }}.yml"
 
+- name: Include nginx config tasks
+  ansible.builtin.include_tasks: nginx-conf.yml
+  when: ansible_facts['pkg_mgr'] == 'dnf' or nginx_source == 'nginx.org'
+
 - name: Collect nginx -V output
   ansible.builtin.command: "{{ nginx_command }} -V"
   register: __nginx_v_out
