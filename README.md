@@ -99,6 +99,8 @@ If SELinux is in enforcing mode, several additional actions will be taken:
 
 - If `certbot_well_known_root` is set, it will be updated to allow the type `httpd_sys_content_t` permissions on all subdirectories
 - If `nginx_selinux_allow_local_connections` is enabled (default: `false`), allow nginx to connect to localhost
+- Any SELinux booleans listed in `nginx_selinux_booleans` (default: `[]`) are enabled persistently, e.g.
+  `httpd_use_nfs` to allow nginx to serve files from NFS (such as Galaxy datasets via `X-Accel-Redirect`)
 
 ## Dependencies
 
