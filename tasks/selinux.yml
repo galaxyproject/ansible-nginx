@@ -27,3 +27,10 @@
     state: true
     persistent: true
   when: nginx_selinux_allow_local_connections | bool
+
+- name: "Enable additional SELinux booleans"
+  ansible.posix.seboolean:
+    name: "{{ item }}"
+    state: true
+    persistent: true
+  loop: "{{ nginx_selinux_booleans }}"

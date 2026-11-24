@@ -37,6 +37,9 @@ nginx_enable_default_ipv6: true
 
 nginx_selinux_allow_local_connections: false
 
+# Additional SELinux booleans to enable (persistently), e.g. httpd_use_nfs to serve files from NFS
+nginx_selinux_booleans: []
+
 # Options for the http {} section of the nginx config, a dictionary
 # nginx_conf_http:
 
